@@ -31,7 +31,7 @@ public:
 		u = mu;
 		r_coeff = 0.5;
 		t_coeff = 0.5;
-		r_index = 5;
+		r_index = epsilon * mu;
 	}
 	vector< valarray <float> > getEquations()
 	{
@@ -223,7 +223,7 @@ valarray<float> doesItPass(Ray ray, Receiver rec)
 	return ans;
 }
 
-valarray<float> nextObject(Ray ray, vector<Object> obstacles)
+valarray<float> nextObject(int presentIndex, Ray ray, vector<Object> obstacles)
 {
 	int count = 0, index = -1, iii = -1;
 	float t = 0.0;
@@ -231,7 +231,7 @@ valarray<float> nextObject(Ray ray, vector<Object> obstacles)
 	{
 		valarray<float> poi = getPOI(ray, obstacles[i]);
 		valarray<float> poi_4(4); for (int poi_i = 0; poi_i < 3; poi_i++) poi_4[poi_i] = poi[poi_i];
-		cout << poi_4[0] << "\t" << poi_4[1] << "\t" << poi_4[2] << endl;
+		//cout << poi_4[0] << "\t" << poi_4[1] << "\t" << poi_4[2] << endl;
 		float tt = poi[3];
 		float ii = poi[4];
 		if (tt > 0.0)
@@ -242,6 +242,7 @@ valarray<float> nextObject(Ray ray, vector<Object> obstacles)
 				t = tt;
 				iii = (int)ii;
 			}
+			else if (presentIndex == i);
 			else if (tt < t)
 			{
 				index = i;
@@ -258,15 +259,15 @@ valarray<float> nextObject(Ray ray, vector<Object> obstacles)
 	return ans;
 }
 
-void raytrace(Ray ray, Object obj, float fieldStrength, float pathLength, vector<Object> obstacles, int presentIndex)
+void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obstacles, int presentIndex)
 {
-	cout << "field:" << fieldStrength << "\n";
+	cout << "field:" << fieldStrength;// << "\n";
 	outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode;
 	int index, iii;
 	float t = 0.0;
 
 	//find the next obstacle in the path of the ray:
-	valarray<float> indices = nextObject(ray, obstacles);
+	valarray<float> indices = nextObject(-1, ray, obstacles);
 	t = indices[0];
 	iii = (int)indices[1];
 	index = (int)indices[2];
@@ -278,7 +279,7 @@ void raytrace(Ray ray, Object obj, float fieldStrength, float pathLength, vector
 		return;//<----------------------------------!!!!TO DO!!!!---return point where ray dies------------------------------------------------
 	}
 
-	cout << "index: " << index << endl;
+	//cout << "index: " << index << endl;
 
 	//check if it enters receiver region:
 	valarray<float> receiverCheck = doesItPass(ray, receiver);
@@ -296,18 +297,22 @@ void raytrace(Ray ray, Object obj, float fieldStrength, float pathLength, vector
 	pathLength += t*sqrt((ray.direction * ray.direction).sum());
 	Ray reflectedRay, transmittedRay, bufferRay;
 	reflectedRay.setPoint(p[0], p[1], p[2]);
-	bufferRay.setPoint(p[0], p[1], p[2]);
-	bufferRay.setDirection(ray.direction[0], ray.direction[1], ray.direction[2]);
 	transmittedRay.setPoint(p[0], p[1], p[2]);
-
-	//
-	int nextIndex = (int)nextObject(bufferRay, obstacles)[2];
-	if (nextObject(bufferRay, obstacles)[0] == 0) nextIndex = index;
+	float small_t = 0.01;
+	int nextIndex = 0, count_lo = 0;
+	for (size_t lo = 0; lo < obstacles.size(); lo++)
+	{
+		if (isItInside(p, obstacles[lo]) == 1 && lo != 0)
+		{
+			nextIndex = lo;
+		}
+	}
 
 	//if field falls below threshold (set as 0.1) then stop and display point
 	if (fieldStrength<0.1 || didItReach == 1)
 	{
-		cout << "p[0]: " << p[0] << "\tp[1]: " << p[1] << "\tp[2]: " << p[2] << endl;
+		cout << "DONE!!" << endl;
+		//cout << "p[0]: " << p[0] << "\tp[1]: " << p[1] << "\tp[2]: " << p[2] << endl;
 		outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
 		plotcode++;
 		return;
@@ -319,14 +324,16 @@ void raytrace(Ray ray, Object obj, float fieldStrength, float pathLength, vector
 	float acc2 = -1.0*((ray.direction * obstacles[index].getEquations()[iii]).sum());
 	float acc3 = (obstacles[index].getEquations()[iii] * obstacles[index].getEquations()[iii]).sum();
 	t = acc2 / acc1;
-	valarray<float> ans = obstacles[index].getEquations()[iii] + t*ray.direction;
-	float small_t = 0.01;
-	float f = isSameSide(ray.point, p + small_t*ans, obstacles[index].getEquations()[iii]);
-	reflectedRay.setDirection(f*ans[0], f*ans[1], f*ans[2]);
+	valarray<float> normal_check1 = p + small_t * ray.direction;
+	valarray<float> normal_check2 = p + small_t * obstacles[index].getEquations()[iii];
+	float f = -1.0 * isSameSide(normal_check1, normal_check2, obstacles[index].getEquations()[iii]);
+	float i_dot_n = -2.0 * acc2 * f;
+	valarray<float> ans = i_dot_n * obstacles[index].getEquations()[iii] + ray.direction;
+	reflectedRay.setDirection(ans[0], ans[1], ans[2]);
 
 	//set the direction ratios of the transmitted ray here:
 	float cosTheta1 = -acc2 / sqrt(acc1*acc3); float sinTheta1 = sin(acos(cosTheta1));
-	float n = obj.r_index / obstacles[nextIndex].r_index;
+	float n = obstacles[presentIndex].r_index / obstacles[nextIndex].r_index;
 	float sinTheta2 = n*sinTheta1; float cosTheta2 = cos(asin(sinTheta2));
 	float t_c = -1.0*sqrt(1 - pow(sinTheta2, 2)) / sqrt(acc3);
 	valarray<float> t_par = n*((ray.direction / sqrt(acc1)) + (cosTheta1*obstacles[index].getEquations()[iii] / sqrt(acc3)));
@@ -337,12 +344,15 @@ void raytrace(Ray ray, Object obj, float fieldStrength, float pathLength, vector
 	transmittedRay.setDirection(f*t_total[0], f*t_total[1], f*t_total[2]);
 
 	//trace the reflected and refracted rays next:
-	cout << "\nSTARTING REFLECTION\n@ " << reflectedRay.direction[0] << " " << reflectedRay.direction[1] << " " << reflectedRay.direction[2] << endl;
+	if (index == 0 || presentIndex == 0)
+	{
+		cout << "\nSTARTING REFLECTION\n@ " << reflectedRay.point[0] << " " << reflectedRay.point[1] << " " << reflectedRay.point[2] << endl;
+		outfile << endl;
+		raytrace(reflectedRay, obstacles[presentIndex].r_coeff * fieldStrength, pathLength, obstacles, presentIndex);
+	}
+	cout << "\nSTARTING REFRACTION\n@ " << transmittedRay.point[0] << " " << transmittedRay.point[1] << " " << transmittedRay.point[2] << endl;
 	outfile << endl;
-	if (index == 0 || presentIndex == 0) raytrace(reflectedRay, obj, obj.r_coeff * fieldStrength, pathLength, obstacles, presentIndex);
-	cout << "\nSTARTING REFRACTION\n";
-	outfile << endl;
-	raytrace(transmittedRay, obstacles[nextIndex], obstacles[index].t_coeff * fieldStrength, pathLength, obstacles, nextIndex);
+	raytrace(transmittedRay, obstacles[index].t_coeff * fieldStrength, pathLength, obstacles, nextIndex);
 }
 
 int main()
@@ -361,7 +371,7 @@ int main()
 	Object Box;
 	Box.setShape(2, 10, 10);
 	Box.setPosition(3, 0, 0);
-	Box.setProperty(1, 1);
+	Box.setProperty(2, 1);
 	Box.getPoints();
 	obstacles.push_back(Box);
 
@@ -375,28 +385,28 @@ int main()
 	Object Box3;
 	Box3.setShape(3, 4, 4);
 	Box3.setPosition(-2.5, 0, -3);
-	Box3.setProperty(1, 1);
+	Box3.setProperty(2, 2);
 	Box3.getPoints();
 	obstacles.push_back(Box3);
 
 	Ray ray;
 	ray.setPoint(transmitter.x, transmitter.y, transmitter.z);
 	ray.setDirection(1, 0, -3);
-	raytrace(ray, obstacles[0], 1, 0, obstacles, 0);
+	raytrace(ray, 1, 0, obstacles, 0);
 
-	outfile << endl;
+	// outfile << endl;
 
-	Ray ray2;
-	ray2.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray2.setDirection(3, 0, -2);
-	raytrace(ray2, obstacles[0], 1, 0, obstacles, 0);
+	// Ray ray2;
+	// ray2.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray2.setDirection(3, 0, -2);
+	// raytrace(ray2, 1, 0, obstacles, 0);
 
-	outfile << endl;
+	// outfile << endl;
 
-	Ray ray3;
-	ray3.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray3.setDirection(1, -1, -1);
-	raytrace(ray3, obstacles[0], 1, 0, obstacles, 0);
+	// Ray ray3;
+	// ray3.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray3.setDirection(1, -1, -1);
+	// raytrace(ray3, 1, 0, obstacles, 0);
 
 	//somehow start many rays from transmitter
 	//	for(int radius = 1; radius <= 5; radius++ )
