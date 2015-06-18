@@ -47,6 +47,9 @@ for row in data:
 		transmitter = [float(g) for g in transmitter]
 	elif row.split(" ")[0] == "":
 		continue#do nothing
+	elif row.split(" ")[0] == "#":
+		print row
+		continue#comments
 	else:
 		x.append(row.split(" ")[0])
 		y.append(row.split(" ")[1])
@@ -60,9 +63,9 @@ n = [float(g) for g in n]
 
 fig = figure(1)
 ax = Axes3D( fig )
-ax.set_xlim([-5,5])
+'''ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
-ax.set_zlim([-5,5])
+ax.set_zlim([-5,5])'''
 ax.set_xlabel('X axis')
 ax.set_ylabel('Y axis')
 ax.set_zlabel('Z axis')

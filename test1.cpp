@@ -33,9 +33,8 @@ public:
 		t_coeff = 0.5;
 		r_index = epsilon * mu;
 	}
-	vector< valarray <float> > getEquations()
+	valarray <float> getEquations(int i)
 	{
-		vector< valarray <float> > ans;
 		valarray<float> eq(4);
 		eq[0] = 0; eq[1] = 0; eq[2] = 1; eq[3] = -position[2] + 0.5*height;
 		ans.push_back(eq); eq.resize(4);
@@ -49,7 +48,7 @@ public:
 		ans.push_back(eq); eq.resize(4);
 		eq[0] = 1; eq[1] = 0; eq[2] = 0; eq[3] = -position[0] - 0.5*length;
 		ans.push_back(eq); eq.resize(4);
-		return ans;
+		return ans[i];
 	}
 	//---------------------------------------------!!!!TO DO!!!!---redefine the above and below class functions to account for rotation of objects
 	void getPoints()
@@ -73,6 +72,7 @@ public:
 			}
 		}
 	}
+	vector< valarray <float> > ans;
 	float length, breadth, height;
 	float e, u;
 	float r_coeff, t_coeff, r_index;
@@ -115,7 +115,7 @@ public:
 	float x, y, z;
 };
 
-Receiver receiver(3.0, 3.0, 3.0, 1.0);
+Receiver receiver(0.0, 0.0, 0.0, 1.0);
 
 Transmitter transmitter(0.0, 0.0, 5.0);
 
@@ -144,10 +144,10 @@ int isItInside(valarray<float> point, Object obj)
 	float acc1, acc2;
 	for (int i = 0; i<6; i++)
 	{
-		valarray<float> woo1 = obj.getEquations()[i] * obj.position;
-		valarray<float> woo2 = obj.getEquations()[i] * point;
-		float acc1 = obj.getEquations()[i][3] + woo1.sum();
-		float acc2 = obj.getEquations()[i][3] + woo2.sum();
+		valarray<float> woo1 = obj.getEquations(i) * obj.position;
+		valarray<float> woo2 = obj.getEquations(i) * point;
+		float acc1 = obj.getEquations(i)[3] + woo1.sum();
+		float acc2 = obj.getEquations(i)[3] + woo2.sum();
 		if (acc1*acc2 >= 0)
 		{
 			check += 0;
@@ -172,10 +172,10 @@ valarray<float> getPOI(Ray ray, Object obj)
 	float t = 0; int i_min = -1; int count = 0;
 	for (int ii = 0; ii<6; ii++)
 	{
-		float acc1 = (obj.getEquations()[ii] * ray.point).sum();
-		float acc2 = (obj.getEquations()[ii] * ray.direction).sum();
+		float acc1 = (obj.getEquations(ii) * ray.point).sum();
+		float acc2 = (obj.getEquations(ii) * ray.direction).sum();
 		float tt;
-		tt = -1.0*(obj.getEquations()[ii][3] + acc1) / acc2;
+		tt = -1.0*(obj.getEquations(ii)[3] + acc1) / acc2;
 		if (tt > 0 && isItInside(ray.point + ray.direction * tt, obj) == 1){
 			if (count == 0)
 			{
@@ -274,7 +274,7 @@ void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obs
 
 	if (t == 0)
 	{
-		cout << "DONE!!" << endl;
+		cout << "DONE1!!" << endl;
 		plotcode++;
 		return;//<----------------------------------!!!!TO DO!!!!---return point where ray dies------------------------------------------------
 	}
@@ -293,25 +293,34 @@ void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obs
 
 	//find the point of intersection and set it for next rays:
 	valarray<float> p;
-	p = ray.point + t*ray.direction;
-	pathLength += t*sqrt((ray.direction * ray.direction).sum());
+	p = ray.point + t * ray.direction;
+	pathLength += t * sqrt((ray.direction * ray.direction).sum());
 	Ray reflectedRay, transmittedRay, bufferRay;
 	reflectedRay.setPoint(p[0], p[1], p[2]);
 	transmittedRay.setPoint(p[0], p[1], p[2]);
 	float small_t = 0.01;
+	valarray<float> pp = p + small_t * ray.direction;
 	int nextIndex = 0, count_lo = 0;
 	for (size_t lo = 0; lo < obstacles.size(); lo++)
 	{
-		if (isItInside(p, obstacles[lo]) == 1 && lo != 0)
+		if (isItInside(pp, obstacles[lo]) == 1 && lo != 0)
 		{
 			nextIndex = lo;
 		}
 	}
 
-	//if field falls below threshold (set as 0.1) then stop and display point
-	if (fieldStrength<0.1 || didItReach == 1)
+	//did it reach?
+	if (didItReach == 1)
 	{
-		cout << "DONE!!" << endl;
+		outfile << endl << "# " << plotcode << " Reached @ " << p[0] << " " << p[1] << " " << p[2] << endl;
+		plotcode++;
+		return;
+	}
+
+	//if field falls below threshold (set as 0.1) then stop and display point
+	if (fieldStrength<0.1)
+	{
+		cout << "DONE2!!" << endl;
 		//cout << "p[0]: " << p[0] << "\tp[1]: " << p[1] << "\tp[2]: " << p[2] << endl;
 		outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
 		plotcode++;
@@ -321,14 +330,14 @@ void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obs
 
 	//set the direction ratios of the reflected ray here:
 	float acc1 = (ray.direction * ray.direction).sum();
-	float acc2 = -1.0*((ray.direction * obstacles[index].getEquations()[iii]).sum());
-	float acc3 = (obstacles[index].getEquations()[iii] * obstacles[index].getEquations()[iii]).sum();
+	float acc2 = -1.0*((ray.direction * obstacles[index].getEquations(iii)).sum());
+	float acc3 = (obstacles[index].getEquations(iii) * obstacles[index].getEquations(iii)).sum() - pow(obstacles[index].getEquations(iii)[3], 2);
 	t = acc2 / acc1;
 	valarray<float> normal_check1 = p + small_t * ray.direction;
-	valarray<float> normal_check2 = p + small_t * obstacles[index].getEquations()[iii];
-	float f = -1.0 * isSameSide(normal_check1, normal_check2, obstacles[index].getEquations()[iii]);
-	float i_dot_n = -2.0 * acc2 * f;
-	valarray<float> ans = i_dot_n * obstacles[index].getEquations()[iii] + ray.direction;
+	valarray<float> normal_check2 = p + small_t * obstacles[index].getEquations(iii);
+	float f_normal = -1.0 * isSameSide(normal_check1, normal_check2, obstacles[index].getEquations(iii));
+	float i_dot_n = 2.0 * acc2;// * f_normal;
+	valarray<float> ans = i_dot_n * obstacles[index].getEquations(iii) + ray.direction;
 	reflectedRay.setDirection(ans[0], ans[1], ans[2]);
 
 	//set the direction ratios of the transmitted ray here:
@@ -336,12 +345,10 @@ void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obs
 	float n = obstacles[presentIndex].r_index / obstacles[nextIndex].r_index;
 	float sinTheta2 = n*sinTheta1; float cosTheta2 = cos(asin(sinTheta2));
 	float t_c = -1.0*sqrt(1 - pow(sinTheta2, 2)) / sqrt(acc3);
-	valarray<float> t_par = n*((ray.direction / sqrt(acc1)) + (cosTheta1*obstacles[index].getEquations()[iii] / sqrt(acc3)));
-	valarray<float> t_per = t_c * obstacles[index].getEquations()[iii];
+	valarray<float> t_par = n*((ray.direction / sqrt(acc1)) + (cosTheta1 * f_normal * obstacles[index].getEquations(iii) / sqrt(acc3)));
+	valarray<float> t_per = t_c * f_normal * obstacles[index].getEquations(iii);
 	valarray<float> t_total = t_par + t_per;
-	f = isSameSide(ray.point, p + small_t*t_total, obstacles[index].getEquations()[iii]);
-	f *= -1.0;
-	transmittedRay.setDirection(f*t_total[0], f*t_total[1], f*t_total[2]);
+	transmittedRay.setDirection(t_total[0], t_total[1], t_total[2]);
 
 	//trace the reflected and refracted rays next:
 	if (index == 0 || presentIndex == 0)
@@ -389,10 +396,10 @@ int main()
 	Box3.getPoints();
 	obstacles.push_back(Box3);
 
-	Ray ray;
-	ray.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray.setDirection(1, 0, -3);
-	raytrace(ray, 1, 0, obstacles, 0);
+	// Ray ray;
+	// ray.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray.setDirection(1, 0, -3);
+	// raytrace(ray, 1, 0, obstacles, 0);
 
 	// outfile << endl;
 
@@ -409,17 +416,17 @@ int main()
 	// raytrace(ray3, 1, 0, obstacles, 0);
 
 	//somehow start many rays from transmitter
-	//	for(int radius = 1; radius <= 5; radius++ )
-	//	{
-	//		for(float angle = 0; angle <= 2 * PI; angle += 0.5)
-	//		{
-	//			Ray rayX;
-	//			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	//			rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
-	//			raytrace(rayX, obstacles[0], 1, 0, obstacles, 0);
-	//			outfile << endl;
-	//		}
-	//	}
+		for(int radius = 1; radius <= 5; radius++ )
+		{
+			for(float angle = 0; angle <= 2 * PI; angle += 0.5)
+			{
+				Ray rayX;
+				rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
+				rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
+				raytrace(rayX, 1, 0, obstacles, 0);
+				outfile << endl;
+			}
+		}
 
 	outfile.close();
 	//getchar();
