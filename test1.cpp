@@ -115,7 +115,7 @@ public:
 	float x, y, z;
 };
 
-Receiver receiver(0.0, 0.0, 0.0, 1.0);
+Receiver receiver(2.5, -2.5, -2.5, 1.0);
 
 Transmitter transmitter(0.0, 0.0, 5.0);
 
@@ -312,7 +312,10 @@ void raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obs
 	//did it reach?
 	if (didItReach == 1)
 	{
-		outfile << endl << "# " << plotcode << " Reached @ " << p[0] << " " << p[1] << " " << p[2] << endl;
+		outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
+		outfile << endl << "# " << plotcode << " Reached @ " << p[0] << " " << p[1] << " " << p[2];
+		float timeOfReach = pathLength / (3e8);
+		outfile << "# at time: " << timeOfReach << endl;
 		plotcode++;
 		return;
 	}
@@ -416,17 +419,17 @@ int main()
 	// raytrace(ray3, 1, 0, obstacles, 0);
 
 	//somehow start many rays from transmitter
-		for(int radius = 1; radius <= 5; radius++ )
+	for(int radius = 1; radius <= 5; radius++ )
+	{
+		for(float angle = 0; angle <= 2 * PI; angle += 0.25)
 		{
-			for(float angle = 0; angle <= 2 * PI; angle += 0.5)
-			{
-				Ray rayX;
-				rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
-				rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
-				raytrace(rayX, 1, 0, obstacles, 0);
-				outfile << endl;
-			}
+			Ray rayX;
+			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
+			rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
+			raytrace(rayX, 1, 0, obstacles, 0);
+			outfile << endl;
 		}
+	}
 
 	outfile.close();
 	//getchar();

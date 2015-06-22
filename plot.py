@@ -18,6 +18,7 @@ n = []
 all_planes = []
 receiver = []
 transmitter = []
+reachingRays = []
 
 for row in data:
 	if(row.split(" ")[0] == "planes"):
@@ -49,6 +50,7 @@ for row in data:
 		continue#do nothing
 	elif row.split(" ")[0] == "#":
 		print row
+		reachingRays.append(float(row.split(" ")[1]))
 		continue#comments
 	else:
 		x.append(row.split(" ")[0])
@@ -63,9 +65,9 @@ n = [float(g) for g in n]
 
 fig = figure(1)
 ax = Axes3D( fig )
-'''ax.set_xlim([-5,5])
+ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
-ax.set_zlim([-5,5])'''
+ax.set_zlim([-5,5])
 ax.set_xlabel('X axis')
 ax.set_ylabel('Y axis')
 ax.set_zlabel('Z axis')
@@ -83,7 +85,8 @@ for j in range(0,len(n)):
 		if i >= len(n):
 			break
 		#print xx
-	ax.plot(xx,yy,zs=zz)
+	if n[i-1] in reachingRays:
+		ax.plot(xx,yy,zs=zz,alpha=0.6)
 	'''for ii in range(len(xx)):
 	    text='['+str(float(round(xx[ii],2)))+','+str(float(round(yy[ii],2)))+','+str(float(round(zz[ii],2)))+']'    
 	    x2, y2, _ = proj3d.proj_transform(xx[ii],yy[ii],zz[ii], ax.get_proj())    
