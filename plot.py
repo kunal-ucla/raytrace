@@ -86,7 +86,7 @@ for j in range(0,len(n)):
 			break
 		#print xx
 	#if n[i-1] in reachingRays:
-	ax.plot(xx,yy,zs=zz,alpha=0.6)
+	ax.plot(xx,yy,zs=zz,alpha=0.6,color='r')
 	'''for ii in range(len(xx)):
 	    text='['+str(float(round(xx[ii],2)))+','+str(float(round(yy[ii],2)))+','+str(float(round(zz[ii],2)))+']'    
 	    x2, y2, _ = proj3d.proj_transform(xx[ii],yy[ii],zz[ii], ax.get_proj())    

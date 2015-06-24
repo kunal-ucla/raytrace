@@ -30,7 +30,7 @@ public:
 		e = epsilon;
 		u = mu;
 		r_coeff = 0.5;
-		t_coeff = 0.5;
+		t_coeff = 0.8;
 		r_index = epsilon * mu;
 	}
 	valarray <float> getEquations(int i)
@@ -115,7 +115,7 @@ public:
 	float x, y, z;
 };
 
-Receiver receiver(2.5, -2.5, -2.5, 1.0);
+Receiver receiver(-3, -3, -2.5, 1.0);
 
 Transmitter transmitter(0.0, 0.0, 5.0);
 
@@ -327,9 +327,9 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	if (fieldStrength<0.1)
 	{
 		cout << "DONE2!!" << endl;
-		outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode << endl;
-		outfile << p[0] << " " << p[1] << " " << p[2] << " " << plotcode << endl;
-		plotcode++;
+		// outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode << endl;
+		// outfile << p[0] << " " << p[1] << " " << p[2] << " " << plotcode << endl;
+		// plotcode++;
 		//cout << "p[0]: " << p[0] << "\tp[1]: " << p[1] << "\tp[2]: " << p[2] << endl;
 		//outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
 		//plotcode++;
@@ -413,37 +413,37 @@ int main()
 	Box3.getPoints();
 	obstacles.push_back(Box3);
 
-	Ray ray;
-	ray.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray.setDirection(1, 0, -3);
-	raytrace(ray, 1, 0, obstacles, 0);
+	// Ray ray;
+	// ray.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray.setDirection(1, 0, -3);
+	// raytrace(ray, 1, 0, obstacles, 0);
 
-	outfile << endl;
+	// outfile << endl;
 
-	Ray ray2;
-	ray2.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray2.setDirection(3, 0, -2);
-	raytrace(ray2, 1, 0, obstacles, 0);
+	// Ray ray2;
+	// ray2.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray2.setDirection(3, 0, -2);
+	// raytrace(ray2, 1, 0, obstacles, 0);
 
-	outfile << endl;
+	// outfile << endl;
 
-	Ray ray3;
-	ray3.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	ray3.setDirection(1, -1, -1);
-	raytrace(ray3, 1, 0, obstacles, 0);
+	// Ray ray3;
+	// ray3.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// ray3.setDirection(1, -1, -1);
+	// raytrace(ray3, 1, 0, obstacles, 0);
 
 	//somehow start many rays from transmitter
-	// for(int radius = 1; radius <= 5; radius++ )
-	// {
-	// 	for(float angle = 0; angle <= 2 * PI; angle += 0.25)
-	// 	{
-	// 		Ray rayX;
-	// 		rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
-	// 		rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
-	// 		raytrace(rayX, 1, 0, obstacles, 0);
-	// 		outfile << endl;
-	// 	}
-	// }
+	for(int radius = 1; radius <= 5; radius+=1 )
+	{
+		for(float angle = 0; angle <= 2 * PI; angle += 0.25)
+		{
+			Ray rayX;
+			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
+			rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
+			raytrace(rayX, 1, 0, obstacles, 0);
+			outfile << endl;
+		}
+	}
 
 	outfile.close();
 	//getchar();
