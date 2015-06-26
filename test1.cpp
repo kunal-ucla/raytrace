@@ -4,6 +4,7 @@
 #include<valarray>
 #include<fstream>
 #include<stdio.h>
+#include<time.h>
 #define PI 3.14159265
 using namespace std;
 
@@ -261,8 +262,6 @@ valarray<float> nextObject(int presentIndex, Ray ray, vector<Object> obstacles)
 
 int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obstacles, int presentIndex)
 {
-	cout << "field:" << fieldStrength;// << "\n";
-	//outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode;
 	int index, iii;
 	float t = 0.0;
 
@@ -275,11 +274,8 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	if (t == 0)
 	{
 		cout << "DONE1!!" << endl;
-		//plotcode++;
 		return 1;//<----------------------------------!!!!TO DO!!!!---return point where ray dies------------------------------------------------
 	}
-
-	//cout << "index: " << index << endl;
 
 	//check if it enters receiver region:
 	valarray<float> receiverCheck = doesItPass(ray, receiver);
@@ -312,11 +308,8 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	//did it reach?
 	if (didItReach == 1)
 	{
-		//outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
-		//outfile << endl << "# " << plotcode << " Reached @ " << p[0] << " " << p[1] << " " << p[2];
 		float timeOfReach = pathLength / (3e8);
-		//outfile << "# at time: " << timeOfReach << endl;
-		//plotcode++;
+		outfile << "Time " <<  timeOfReach << " " << fieldStrength << endl;
 		outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode << endl;
 		outfile << p[0] << " " << p[1] << " " << p[2] << " " << plotcode << endl;
 		plotcode++;
@@ -327,12 +320,6 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	if (fieldStrength<0.1)
 	{
 		cout << "DONE2!!" << endl;
-		// outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode << endl;
-		// outfile << p[0] << " " << p[1] << " " << p[2] << " " << plotcode << endl;
-		// plotcode++;
-		//cout << "p[0]: " << p[0] << "\tp[1]: " << p[1] << "\tp[2]: " << p[2] << endl;
-		//outfile << endl << p[0] << " " << p[1] << " " << p[2] << " " << plotcode;
-		//plotcode++;
 		return 1;
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
@@ -364,11 +351,9 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	if (index == 0 || presentIndex == 0)
 	{
 		cout << "\nSTARTING REFLECTION\n@ " << reflectedRay.point[0] << " " << reflectedRay.point[1] << " " << reflectedRay.point[2] << endl;
-		//outfile << endl;
 		ref_return = raytrace(reflectedRay, obstacles[presentIndex].r_coeff * fieldStrength, pathLength, obstacles, presentIndex);
 	}
 	cout << "\nSTARTING REFRACTION\n@ " << transmittedRay.point[0] << " " << transmittedRay.point[1] << " " << transmittedRay.point[2] << endl;
-	//outfile << endl;
 	int trans_return = raytrace(transmittedRay, obstacles[index].t_coeff * fieldStrength, pathLength, obstacles, nextIndex);
 	if( ref_return * trans_return >= 2 )
 	{
@@ -381,6 +366,8 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 
 int main()
 {
+	time_t start = time(0);
+	outfile << "# Started @ " << start << endl;
 	outfile << "Receiver " << receiver.point[0] << " " << receiver.point[1] << " " << receiver.point[2] << " " << receiver.radius << endl;
 	outfile << "Transmitter " << transmitter.x << " " << transmitter.y << " " << transmitter.z << endl;
 
@@ -389,7 +376,7 @@ int main()
 	Room.setShape(10, 10, 10);
 	Room.setPosition(0, 0, 0);
 	Room.setProperty(1, 1);
-	Room.getPoints();
+	Room.getPoints();//check once
 	obstacles.push_back(Room);
 
 	Object Box;
@@ -441,10 +428,10 @@ int main()
 			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
 			rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
 			raytrace(rayX, 1, 0, obstacles, 0);
-			outfile << endl;
 		}
 	}
-
+	outfile << "# Ending @ " << time(0) << endl;
+	cout << "# Time elasped: " << difftime( time(0), start) << endl;
 	outfile.close();
 	//getchar();
 	return 0;

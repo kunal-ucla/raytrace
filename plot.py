@@ -18,7 +18,8 @@ n = []
 all_planes = []
 receiver = []
 transmitter = []
-reachingRays = []
+pdp_time = []
+pdp_field = []
 
 for row in data:
 	if(row.split(" ")[0] == "planes"):
@@ -46,11 +47,14 @@ for row in data:
 	elif row.split(" ")[0] == "Transmitter":
 		transmitter = row.split(" ")[1:]
 		transmitter = [float(g) for g in transmitter]
+	elif row.split(" ")[0] == "Time":
+		pdp_time.append(10e9 * float(row.split(" ")[1]))
+		pdp_field.append(float(row.split(" ")[2]))
+		continue#do nothing
 	elif row.split(" ")[0] == "":
 		continue#do nothing
 	elif row.split(" ")[0] == "#":
 		print row
-		reachingRays.append(float(row.split(" ")[1]))
 		continue#comments
 	else:
 		x.append(row.split(" ")[0])
@@ -84,16 +88,7 @@ for j in range(0,len(n)):
 		i = i + 1
 		if i >= len(n):
 			break
-		#print xx
-	#if n[i-1] in reachingRays:
 	ax.plot(xx,yy,zs=zz,alpha=0.6,color='r')
-	'''for ii in range(len(xx)):
-	    text='['+str(float(round(xx[ii],2)))+','+str(float(round(yy[ii],2)))+','+str(float(round(zz[ii],2)))+']'    
-	    x2, y2, _ = proj3d.proj_transform(xx[ii],yy[ii],zz[ii], ax.get_proj())    
-	    label = annotate(text, xycoords='data', xy = (x2, y2), xytext = (60, 20),
-	    textcoords = 'offset points', ha = 'right', va = 'bottom',
-	    bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-	    arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))'''
 	if i >= len(n):
 		break
 
@@ -120,5 +115,10 @@ xm = 0.1 * np.outer(np.cos(phi), np.sin(theta)) + transmitter[0]
 ym = 0.1 * np.outer(np.sin(phi), np.sin(theta)) + transmitter[1]
 zm = 0.1 * np.outer(np.ones(np.size(phi)), np.cos(theta)) + transmitter[2]
 ax.plot_surface(xm, ym, zm, color=color3, linewidth=0)
+
+savefig('figure_1.png')
+figure(2)
+scatter(pdp_time,pdp_field)
+savefig('figure_2.png')
 
 show()
