@@ -48,7 +48,7 @@ for row in data:
 		transmitter = row.split(" ")[1:]
 		transmitter = [float(g) for g in transmitter]
 	elif row.split(" ")[0] == "Time":
-		pdp_time.append(10e9 * float(row.split(" ")[1]))
+		pdp_time.append(1e9 * float(row.split(" ")[1]))
 		pdp_field.append(float(row.split(" ")[2]))
 		continue#do nothing
 	elif row.split(" ")[0] == "":
@@ -69,12 +69,15 @@ n = [float(g) for g in n]
 
 fig = figure(1)
 ax = Axes3D( fig )
-ax.set_xlim([-5,5])
-ax.set_ylim([-5,5])
-ax.set_zlim([-5,5])
+ax.set_xlim([-6.5,6.5])
+ax.set_ylim([-4.3,4.3])
+ax.set_zlim([-1.5,1.5])
 ax.set_xlabel('X axis')
 ax.set_ylabel('Y axis')
 ax.set_zlabel('Z axis')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_zticks([])
 i = 0
 for j in range(0,len(n)):
 	k = n[i]
@@ -116,9 +119,9 @@ ym = 0.1 * np.outer(np.sin(phi), np.sin(theta)) + transmitter[1]
 zm = 0.1 * np.outer(np.ones(np.size(phi)), np.cos(theta)) + transmitter[2]
 ax.plot_surface(xm, ym, zm, color=color3, linewidth=0)
 
-savefig('figure_1.png')
+#savefig('figure_1.png')
 figure(2)
 scatter(pdp_time,pdp_field)
-savefig('figure_2.png')
+#savefig('figure_2.png')
 
 show()
