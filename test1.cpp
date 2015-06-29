@@ -8,7 +8,7 @@
 #define PI 3.14159265
 using namespace std;
 
-ofstream outfile("outmain.dat");
+ofstream outfile("outmain1.dat");
 int plotcode = 0;
 
 class Object
@@ -348,19 +348,19 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 
 	//trace the reflected and refracted rays next:
 	int ref_return = 1;
-	if (index == 0 || presentIndex == 0)
-	{
-		cout << "\nSTARTING REFLECTION\n@ " << reflectedRay.point[0] << " " << reflectedRay.point[1] << " " << reflectedRay.point[2] << endl;
-		ref_return = raytrace(reflectedRay, obstacles[presentIndex].r_coeff * fieldStrength, pathLength, obstacles, presentIndex);
-	}
-	cout << "\nSTARTING REFRACTION\n@ " << transmittedRay.point[0] << " " << transmittedRay.point[1] << " " << transmittedRay.point[2] << endl;
+	// if (index == 0 || presentIndex == 0)
+	// {
+	// 	cout << "\nSTARTING REFLECTION\n@ " << reflectedRay.point[0] << " " << reflectedRay.point[1] << " " << reflectedRay.point[2] << endl;
+	// 	ref_return = raytrace(reflectedRay, obstacles[presentIndex].r_coeff * fieldStrength, pathLength, obstacles, presentIndex);
+	// }
+	// cout << "\nSTARTING REFRACTION\n@ " << transmittedRay.point[0] << " " << transmittedRay.point[1] << " " << transmittedRay.point[2] << endl;
 	int trans_return = raytrace(transmittedRay, obstacles[index].t_coeff * fieldStrength, pathLength, obstacles, nextIndex);
-	if( ref_return * trans_return >= 2 )
-	{
+	// if( ref_return * trans_return >= 2 )
+	// {
 		outfile << ray.point[0] << " " << ray.point[1] << " " << ray.point[2] << " " << plotcode << endl;
 		outfile << p[0] << " " << p[1] << " " << p[2] << " " << plotcode <<endl;
 		plotcode++; 
-	}
+	// }
 	return ref_return * trans_return;
 }
 
@@ -420,13 +420,26 @@ int main()
 	// raytrace(ray3, 1, 0, obstacles, 0);
 
 	//somehow start many rays from transmitter
-	for(int radius = 1; radius <= 5; radius+=1 )
+	// for(int radius = 1; radius <= 5; radius+=1 )
+	// {
+	// 	for(float angle = 0; angle <= 2 * PI; angle += 0.25)
+	// 	{
+	// 		Ray rayX;
+	// 		rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
+	// 		rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
+	// 		raytrace(rayX, 1, 0, obstacles, 0);
+	// 	}
+	// }
+
+	float fR = 0.6, fA = 0.1, fB = 0.1;
+	for(float fi = -fB * (int)(fR/fB); fi <= fR; fi = fi + fB)
 	{
-		for(float angle = 0; angle <= 2 * PI; angle += 0.25)
+		float fr = sqrt(pow(fR,2) - pow(fi,2));
+		for(float fa = 0; fa <= 2 * PI; fa = fa + fA/fr)
 		{
 			Ray rayX;
 			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
-			rayX.setDirection(radius * cos(angle), radius * sin(angle), -5.0);
+			rayX.setDirection(fr * cos(fa), fr * sin(fa), fi);
 			raytrace(rayX, 1, 0, obstacles, 0);
 		}
 	}

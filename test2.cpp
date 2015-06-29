@@ -76,7 +76,7 @@ public:
 	vector< valarray <float> > ans;
 	float length, breadth, height;
 	float e, u;
-	float r_coeff, t_coeff, r_index, gamma;
+	float r_coeff, t_coeff, r_index, gamma = 0;
 	valarray<float> position = valarray<float>(4);
 };
 
@@ -304,6 +304,15 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 			nextIndex = lo;
 		}
 	}
+	valarray<float> ppp = p - small_t * ray.direction;
+	int prevIndex = 0; count_lo = 0;
+	for (size_t lo = 0; lo < obstacles.size(); lo++)
+	{
+		if (isItInside(pp, obstacles[lo]) == 1 && lo != 0)
+		{
+			prevIndex = lo;
+		}
+	}
 
 	//did it reach?
 	if (didItReach == 1)
@@ -317,7 +326,7 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	}
 
 	//field attenuation with distance:
-	fieldStrength *= exp(pathLength * gamma);
+	fieldStrength *= exp(pathLength * obstacles[prevIndex].gamma);
 
 	//if field falls below threshold (set as 0.1) then stop
 	if (fieldStrength<0.1)
@@ -418,26 +427,17 @@ int main()
 	obstacles.push_back(Box4);
 
 	//somehow start many rays from transmitter
-	for(int radius = 1; radius <= 5; radius+=1 )
+	float fR = 0.6, fA = 0.05, fB = 0.05;
+	for(float fi = -fB * (int)(fR/fB); fi <= fR; fi = fi + fB)
 	{
-		for(float angle = 0; angle <= 2 * PI; angle += 0.25)
+		float fr = sqrt(pow(fR,2) - pow(fi,2));
+		for(float fa = 0; fa <= 2 * PI; fa = fa + fA/fr)
 		{
 			Ray rayX;
 			rayX.setPoint(transmitter.x, transmitter.y, transmitter.z);
-			rayX.setDirection(radius * cos(angle), radius * sin(angle), -0.75);
+			rayX.setDirection(fr * cos(fa), fr * sin(fa), fi);
 			raytrace(rayX, 1, 0, obstacles, 0);
-			Ray rayY;
-			rayY.setPoint(transmitter.x, transmitter.y, transmitter.z);
-			rayY.setDirection(radius * cos(angle), radius * sin(angle), 0.75);
-			raytrace(rayY, 1, 0, obstacles, 0);
 		}
-	}
-	for(float angle = 0; angle <= 2 * PI; angle += 0.25)
-	{
-		Ray rayZ;
-		rayZ.setPoint(transmitter.x, transmitter.y, transmitter.z);
-		rayZ.setDirection(cos(angle), sin(angle), 0);
-		raytrace(rayZ, 1, 0, obstacles, 0);
 	}
 	outfile << "# Ending @ " << time(0) << endl;
 	cout << "# Time elasped: " << difftime( time(0), start) << endl;
