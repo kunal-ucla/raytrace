@@ -326,7 +326,7 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	}
 
 	//field attenuation with distance:
-	fieldStrength *= exp(pathLength * obstacles[prevIndex].gamma);
+	fieldStrength *= exp(-1 * pathLength * obstacles[prevIndex].gamma);
 
 	//if field falls below threshold (set as 0.1) then stop
 	if (fieldStrength<0.1)
@@ -439,6 +439,7 @@ int main()
 			raytrace(rayX, 1, 0, obstacles, 0);
 		}
 	}
+
 	outfile << "# Ending @ " << time(0) << endl;
 	cout << "# Time elasped: " << difftime( time(0), start) << endl;
 	outfile.close();

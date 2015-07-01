@@ -69,9 +69,9 @@ n = [float(g) for g in n]
 
 fig = figure(1)
 ax = Axes3D( fig )
-ax.set_xlim([-6.5,6.5])
-ax.set_ylim([-4.3,4.3])
-ax.set_zlim([-1.5,1.5])
+# ax.set_xlim([-6.5,6.5])
+# ax.set_ylim([-4.3,4.3])
+# ax.set_zlim([-1.5,1.5])
 ax.set_xlabel('X axis')
 ax.set_ylabel('Y axis')
 ax.set_zlabel('Z axis')
