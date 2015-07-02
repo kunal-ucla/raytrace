@@ -76,7 +76,6 @@ func getPoints(obj Object) {
 	for ii := 0; ii < 3; ii++ {
 		var i = []int{ii % 3, (ii + 1) % 3, (ii + 2) % 3}
 		for k := 0; k < 2; k++ {
-			//outfile << "planes";
 			fmt.Fprint(fid, "planes")
 			for j := 0; j < 4; j++ {
 				fmt.Fprint(fid, " ", i[0], " ", obj.position[i[0]]+sym2[k]*dim[i[0]]/2)
@@ -84,7 +83,6 @@ func getPoints(obj Object) {
 				fmt.Fprint(fid, " ", i[2], " ", obj.position[i[2]]+sym[1][j]*dim[i[2]]/2)
 
 			}
-			//outfile << endl;//gogogogogogogo
 			fmt.Fprint(fid, "\n")
 		}
 	}
@@ -273,10 +271,11 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 	}
 
 	//field attenuation with distance:
-	//fieldStrength *= exp(-1 * pathLength * obstacles[prevIndex].gamma)
+	fieldStrength *= math.Exp(-1 * pathLength * 0.05)
+	fmt.Print(fieldStrength, "\n")
 
 	//if field falls below threshold (set as 0.1) then stop
-	if fieldStrength < 0.1 {
+	if fieldStrength < 0.01 {
 		return 1
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
@@ -327,22 +326,22 @@ func main() {
 	fmt.Fprint(fid, "Receiver ", receiver.point[0], " ", receiver.point[1], " ", receiver.point[2], receiver.radius, "\n")
 	fmt.Fprint(fid, "Transmitter ", transmitter.point[0], " ", transmitter.point[1], " ", transmitter.point[2], "\n")
 
-	Room := Object{length: 13, breadth: 8.6, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 1, position: []float64{0, 0, 0}}
+	Room := Object{length: 13, breadth: 8.6, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 1, position: []float64{0, 0, 0}}
 	getPoints(Room)
 
-	Box := Object{length: 0.03, breadth: 2.5, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 2, position: []float64{-3.6586, -1.72, 0}}
+	Box := Object{length: 0.03, breadth: 2.5, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-3.6586, -1.72, 0}}
 	getPoints(Box)
 
-	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 2, position: []float64{6.045, 3.9775, 0}}
+	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.045, 3.9775, 0}}
 	getPoints(Box1)
 
-	Box2 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 2, position: []float64{-6.045, 3.9775, 0}}
+	Box2 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-6.045, 3.9775, 0}}
 	getPoints(Box2)
 
-	Box3 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 2, position: []float64{6.045, -3.9775, 0}}
+	Box3 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.045, -3.9775, 0}}
 	getPoints(Box3)
 
-	Box4 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.8, t_coeff: 0, r_index: 2, position: []float64{-6.045, -3.9775, 0}}
+	Box4 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-6.045, -3.9775, 0}}
 	getPoints(Box4)
 
 	var obstacles []Object = []Object{Room, Box, Box1, Box2, Box3, Box4}

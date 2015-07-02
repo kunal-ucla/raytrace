@@ -4,6 +4,7 @@ from scipy import *
 from pylab import *
 from mpl_toolkits.mplot3d import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from math import *
 import sys
 
 with open(sys.argv[1]) as f:
@@ -49,7 +50,7 @@ for row in data:
 		transmitter = [float(g) for g in transmitter]
 	elif row.split(" ")[0] == "Time":
 		pdp_time.append(1e9 * float(row.split(" ")[1]))
-		pdp_field.append(float(row.split(" ")[2]))
+		pdp_field.append(10*log(float(row.split(" ")[2]),10))
 		continue#do nothing
 	elif row.split(" ")[0] == "":
 		continue#do nothing
