@@ -308,7 +308,7 @@ int raytrace(Ray ray, float fieldStrength, float pathLength, vector<Object> obst
 	int prevIndex = 0; count_lo = 0;
 	for (size_t lo = 0; lo < obstacles.size(); lo++)
 	{
-		if (isItInside(pp, obstacles[lo]) == 1 && lo != 0)
+		if (isItInside(ppp, obstacles[lo]) == 1 && lo != 0)
 		{
 			prevIndex = lo;
 		}

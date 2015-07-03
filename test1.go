@@ -273,7 +273,6 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 
 	//field attenuation with distance:
 	fieldStrength *= math.Exp(-1 * pathLength * 0.05)
-	//fmt.Print(fieldStrength, "\n")
 
 	//if field falls below threshold (set as 0.1) then stop
 	if fieldStrength < 0.01 {
@@ -351,8 +350,8 @@ func main() {
 
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.01
-	fB := 0.01
+	fA := 0.02
+	fB := 0.02
 	count_rays := 0
 	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
@@ -364,7 +363,6 @@ func main() {
 	}
 
 	fid.Close()
-	fmt.Println(count_rays)
 	elapsed := time.Since(start)
-	fmt.Println("#Time elasped: ", elapsed)
+	fmt.Println("Processed ", count_rays, " rays in ", elapsed)
 }
