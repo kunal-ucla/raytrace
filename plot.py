@@ -49,8 +49,9 @@ for row in data:
 		transmitter = row.split(" ")[1:]
 		transmitter = [float(g) for g in transmitter]
 	elif row.split(" ")[0] == "Time":
-		pdp_time.append(1e9 * float(row.split(" ")[1]))
-		pdp_field.append(10*log(float(row.split(" ")[2]),10))
+		if float(row.split(" ")[2]) > 0:
+			pdp_time.append(1e9 * float(row.split(" ")[1]))
+			pdp_field.append(10*log(float(row.split(" ")[2]),10))
 		continue#do nothing
 	elif row.split(" ")[0] == "":
 		continue#do nothing

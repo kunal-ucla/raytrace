@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"time"
 )
 
 var plotcode int
@@ -272,7 +273,7 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 
 	//field attenuation with distance:
 	fieldStrength *= math.Exp(-1 * pathLength * 0.05)
-	fmt.Print(fieldStrength, "\n")
+	//fmt.Print(fieldStrength, "\n")
 
 	//if field falls below threshold (set as 0.1) then stop
 	if fieldStrength < 0.01 {
@@ -281,7 +282,7 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
 
 	//set the direction ratios of the reflected ray here:
-	acc1 := sum(sum2(ray.direction, ray.direction))
+	acc1 := sum(dot2(ray.direction, ray.direction))
 	acc2 := -1.0 * (sum(dot2(ray.direction, getEquations(iii, obstacles[index]))))
 	acc3 := sum(dot2(getEquations(iii, obstacles[index]), getEquations(iii, obstacles[index]))) - math.Pow(getEquations(iii, obstacles[index])[3], 2)
 	t = acc2 / acc1
@@ -289,7 +290,7 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 	normal_check2 := sum2(p, dot(getEquations(iii, obstacles[index]), small_t))
 	f_normal := -1.0 * isSameSide(normal_check1, normal_check2, getEquations(iii, obstacles[index]))
 	i_dot_n := 2.0 * acc2 // * f_normal;
-	ans := dot(sum2(getEquations(iii, obstacles[index]), ray.direction), i_dot_n)
+	ans := sum2(dot(getEquations(iii, obstacles[index]), i_dot_n), ray.direction)
 	reflectedRay.direction = ans
 
 	//set the direction ratios of the transmitted ray here:
@@ -321,7 +322,9 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 
 func main() {
 
-	fid, _ = os.Create("outmain3.dat")
+	start := time.Now()
+
+	fid, _ = os.Create("outgo.dat")
 
 	fmt.Fprint(fid, "Receiver ", receiver.point[0], " ", receiver.point[1], " ", receiver.point[2], receiver.radius, "\n")
 	fmt.Fprint(fid, "Transmitter ", transmitter.point[0], " ", transmitter.point[1], " ", transmitter.point[2], "\n")
@@ -348,15 +351,20 @@ func main() {
 
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.01
-	fB := 0.01
-	for fi := -fR; fi <= fR; fi = fi + fB {
+	fA := 0.03
+	fB := 0.03
+	count_rays := 0
+	for fi := -fB * float64(int(fR/fB)); fi <= fR && count_rays < 10000; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
 		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
 			rayX := Ray{point: transmitter.point, direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
 			raytrace(rayX, 1, 0, obstacles, 0)
+			count_rays++
 		}
 	}
 
 	fid.Close()
+	fmt.Println(count_rays)
+	elapsed := time.Since(start)
+	fmt.Println("#Time elasped: ", elapsed)
 }
