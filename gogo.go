@@ -37,7 +37,7 @@ func main() {
 	var p Person
 	p.Habit = "popop"
 	p.Name = "kjklj"
-	p.In = 999
+	p.In = 99
 	i := 3
 
 	pinbytes, jerr := json.Marshal(p)
