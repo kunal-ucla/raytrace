@@ -51,7 +51,7 @@ public:
 		ans.push_back(eq); eq.resize(4);
 		return ans[i];
 	}
-	//---------------------------------------------!!!!TO DO!!!!---redefine the above and below class functions to account for rotation of objects
+	//----------------------------------------------!!!!TO DO!!!!---redefine the above and below class functions to account for rotation of objects
 	void getPoints()
 	{
 		float sym[2][4] = { { 1.0, -1.0, -1.0, 1.0 }, { 1.0, 1.0, -1.0, -1.0 } };
