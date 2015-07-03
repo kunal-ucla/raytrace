@@ -98,7 +98,7 @@ type Transmitter struct {
 	point []float64
 }
 
-var receiver Receiver = Receiver{point: []float64{-4.557, -3.01, 0}, radius: 0.2241}
+var receiver Receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
 
 var transmitter Transmitter = Transmitter{point: []float64{-2.0174, -2.58, 0}}
 
@@ -332,10 +332,10 @@ func main() {
 	Room := Object{length: 13, breadth: 8.6, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 1, position: []float64{0, 0, 0}}
 	getPoints(Room)
 
-	Box := Object{length: 0.03, breadth: 2.5, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-3.6586, -1.72, 0}}
+	Box := Object{length: 0.03, breadth: 2.5, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-3.6586, -2.163, 0}}
 	getPoints(Box)
 
-	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.045, 3.9775, 0}}
+	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.845, 3.9775, 0}}
 	getPoints(Box1)
 
 	Box2 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-6.045, 3.9775, 0}}
