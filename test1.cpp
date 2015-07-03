@@ -427,9 +427,9 @@ int main()
 	obstacles.push_back(Box4);
 
 	//start many rays from transmitter
-	float fR = 0.6, fA = 0.03, fB = 0.03;
+	float fR = 0.6, fA = 0.01, fB = 0.01;
 	int count_rays = 0;
-	for(float fi = -fB * (int)(fR/fB); fi <= fR && count_rays<10000; fi = fi + fB)
+	for(float fi = -fB * (int)(fR/fB); fi <= fR; fi = fi + fB)
 	{
 		float fr = sqrt(pow(fR,2) - pow(fi,2));
 		for(float fa = 0; fa <= 2 * PI; fa = fa + fA/fr)

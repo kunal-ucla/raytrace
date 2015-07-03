@@ -351,10 +351,10 @@ func main() {
 
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.03
-	fB := 0.03
+	fA := 0.01
+	fB := 0.01
 	count_rays := 0
-	for fi := -fB * float64(int(fR/fB)); fi <= fR && count_rays < 10000; fi = fi + fB {
+	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
 		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
 			rayX := Ray{point: transmitter.point, direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
