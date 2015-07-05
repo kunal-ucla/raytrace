@@ -37,6 +37,8 @@ func getEquations(i int, obj Object) []float64 {
 	return ans
 }
 
+//multiplies a vector(an array) by a scalar
+//the array should be of type []float64 only and the scalar should be of type float64 only
 func dot(a []float64, b float64) []float64 {
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
@@ -45,6 +47,8 @@ func dot(a []float64, b float64) []float64 {
 	return c
 }
 
+//returns the sum of the elements of an array
+//the array should be of type []float64 only and the scalar should be of type float64 only
 func sum(a []float64) float64 {
 	var c float64
 	for i := 0; i < 3; i++ {
@@ -53,6 +57,8 @@ func sum(a []float64) float64 {
 	return c
 }
 
+//returns the dot product of two vectors(arrays)
+//the array should be of type []float64 only
 func dot2(a, b []float64) []float64 {
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
@@ -61,6 +67,8 @@ func dot2(a, b []float64) []float64 {
 	return c
 }
 
+//returns the sum of two vectors(arrays)
+//the array should be of type []float64 only
 func sum2(a, b []float64) []float64 {
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
@@ -235,8 +243,7 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 		t = receiverCheck[0]
 		didItReach = 1
 	}
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---debug the receiver region::ray is not stopping even after entering the region
-
+	
 	//find the point of intersection and set it for next rays:
 	p := sum2(ray.point, dot(ray.direction, t))
 	pathLength = pathLength + t*math.Sqrt(sum(dot2(ray.direction, ray.direction)))
