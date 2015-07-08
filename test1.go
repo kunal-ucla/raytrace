@@ -198,10 +198,6 @@ func nextObject(presentIndex int, ray Ray, obstacles []Object) []float64 {
 	return ans
 }
 
-var receiver Receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
-
-var transmitter Transmitter = Transmitter{point: []float64{-2.0174, -2.58, 0}}
-
 func getPoints(obj Object) {
 
 	sign := [][]float64{{1.0, -1.0, -1.0, 1.0}, {1.0, 1.0, -1.0, -1.0}}
@@ -264,27 +260,16 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 			nextIndex = lo
 		}
 	}
-	// ppp := sum2(p, dot(ray.direction, -small_t))
-	// prevIndex := 0
-	// for lo := 0; lo < len(obstacles); lo++ {
-	// 	if isItInside(pp, obstacles[lo]) == 1 && lo != 0 {
-	// 		prevIndex = lo
-	// 	}
-	// }
 
 	//did it reach?
 	if didItReach == 1 {
-		//fmt.Print("reached!")
 		timeOfReach := pathLength / 3e8
-		//fmt.Print(pathLength, "\n")
-		//fmt.Fprint(fid, "Time ", timeOfReach, " ", fieldStrength, "\n")
 		{
 			t := make([][]float64, len(data.Time)+1)
 			copy(t, data.Time)
 			data.Time = t
 			data.Time[len(t)-1] = []float64{timeOfReach, fieldStrength}
 		}
-		//fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
 		{
 			t := make([][]float64, len(data.Points)+2)
 			copy(t, data.Points)
@@ -292,17 +277,16 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 			data.Points[len(t)-2] = []float64{ray.point[0], ray.point[1], ray.point[2], float64(plotcode)}
 			data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
 		}
-		//fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
 		fmt.Print("|")
 		plotcode++
 		return 2
 	}
 
 	//field attenuation with distance:
-	fieldStrength *= math.Exp(-1 * pathLength * 0.05)
+	fieldStrength *= math.Exp(-1 * pathLength * 0.4)
 
 	//if field falls below threshold (set as 0.1) then stop
-	if fieldStrength < 0.01 {
+	if fieldStrength < 1e-7 {
 		return 1
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
@@ -339,8 +323,6 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 	}
 	trans_return := raytrace(transmittedRay, obstacles[index].t_coeff*fieldStrength, pathLength, obstacles, nextIndex)
 	if ref_return*trans_return >= 2 {
-		//fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
-		//fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
 		{
 			t := make([][]float64, len(data.Points)+2)
 			copy(t, data.Points)
@@ -363,14 +345,16 @@ type Data struct {
 
 var data Data
 
+var receiver Receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
+
+var transmitter Transmitter = Transmitter{point: []float64{-2.0174, -2.58, 0}}
+
 func main() {
 
 	start := time.Now()
 
 	fid, _ = os.Create("out.json")
 
-	//fmt.Fprint(fid, "Receiver ", receiver.point[0], " ", receiver.point[1], " ", receiver.point[2], receiver.radius, "\n")
-	//fmt.Fprint(fid, "Transmitter ", transmitter.point[0], " ", transmitter.point[1], " ", transmitter.point[2], "\n")
 	data.Receiver = []float64{receiver.point[0], receiver.point[1], receiver.point[2], receiver.radius}
 	data.Transmitter = transmitter.point
 
@@ -399,8 +383,8 @@ func main() {
 
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.005
-	fB := 0.005
+	fA := 0.001
+	fB := 0.001
 	count_rays := 0
 	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
