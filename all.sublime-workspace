@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"fl",
+				"float32	built-in ʈ"
+			],
+			[
+				"floa",
+				"float64	built-in ʈ"
+			],
+			[
 				"Fpr",
 				"Fprintln	n int, err error ƒ"
 			],
@@ -20,26 +28,18 @@
 	"buffers":
 	[
 		{
-			"file": "/home/kunal/Desktop/code/src/gogo.go",
+			"file": "/home/kunal/Desktop/code win64/src/gogo.go",
 			"settings":
 			{
-				"buffer_size": 850,
+				"buffer_size": 721,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/home/kunal/Desktop/code/src/test1.go",
+			"file": "/home/kunal/Desktop/code win64/src/test.csv",
 			"settings":
 			{
-				"buffer_size": 105,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/home/kunal/Desktop/code/src/test2.cpp",
-			"settings":
-			{
-				"buffer_size": 13555,
+				"buffer_size": 83,
 				"line_ending": "Unix"
 			}
 		}
@@ -85,11 +85,17 @@
 	},
 	"expanded_folders":
 	[
-		"/home/kunal/Desktop/code",
-		"/home/kunal/Desktop/code/src"
+		"/home/kunal/Desktop/code win64",
+		"/home/kunal/Desktop/code win64/src",
+		"/home/kunal/Desktop/code win64/win64"
 	],
 	"file_history":
 	[
+		"/home/kunal/Desktop/code win64/src/test1.go",
+		"/home/kunal/Desktop/code win64/src/test.csv",
+		"/home/kunal/Desktop/code/src/test1.go",
+		"/home/kunal/Desktop/code/src/gogo.go",
+		"/home/kunal/Desktop/code/src/test2.cpp",
 		"/home/kunal/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
 		"/home/kunal/go/src/github.com/user/hello/hello.go",
 		"/home/kunal/.config/sublime-text-3/Packages/User/GoSublime.sublime-settings",
@@ -137,53 +143,24 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/home/kunal/Desktop/code/src/gogo.go",
+					"file": "/home/kunal/Desktop/code win64/src/gogo.go",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 850,
+						"buffer_size": 721,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								789,
-								789
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/GoSublime/syntax/GoSublime-Go.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/home/kunal/Desktop/code/src/test1.go",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 105,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								57,
-								57
+								0,
+								721
 							]
 						],
 						"settings":
@@ -199,32 +176,31 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "/home/kunal/Desktop/code/src/test2.cpp",
+					"buffer": 1,
+					"file": "/home/kunal/Desktop/code win64/src/test.csv",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 13555,
+						"buffer_size": 83,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								234,
-								234
+								83,
+								83
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -261,6 +237,10 @@
 		]
 	},
 	"menu_visible": true,
+	"output.9o:///home/kunal/Desktop/code win64/src":
+	{
+		"height": 100.0
+	},
 	"output.9o:///home/kunal/Desktop/code/src":
 	{
 		"height": 155.0
@@ -330,7 +310,7 @@
 	"show_minimap": true,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": true,
+	"side_bar_visible": false,
 	"side_bar_width": 142.0,
 	"status_bar_visible": true,
 	"template_settings":

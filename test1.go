@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -15,6 +16,20 @@ type Object struct {
 	length, breadth, height   float64
 	position                  []float64
 	r_coeff, t_coeff, r_index float64
+}
+
+type Receiver struct {
+	point  []float64
+	radius float64
+}
+
+type Transmitter struct {
+	point []float64
+}
+
+type Ray struct {
+	point     []float64
+	direction []float64
 }
 
 func getEquations(i int, obj Object) []float64 {
@@ -75,44 +90,6 @@ func sum2(a, b []float64) []float64 {
 		c[i] = a[i] + b[i]
 	}
 	return c
-}
-
-func getPoints(obj Object) {
-
-	var sym = [][]float64{{1.0, -1.0, -1.0, 1.0}, {1.0, 1.0, -1.0, -1.0}}
-	var sym2 = []float64{-1.0, 1.0}
-	var dim = []float64{obj.length, obj.breadth, obj.height}
-	for ii := 0; ii < 3; ii++ {
-		var i = []int{ii % 3, (ii + 1) % 3, (ii + 2) % 3}
-		for k := 0; k < 2; k++ {
-			fmt.Fprint(fid, "planes")
-			for j := 0; j < 4; j++ {
-				fmt.Fprint(fid, " ", i[0], " ", obj.position[i[0]]+sym2[k]*dim[i[0]]/2)
-				fmt.Fprint(fid, " ", i[1], " ", obj.position[i[1]]+sym[0][j]*dim[i[1]]/2)
-				fmt.Fprint(fid, " ", i[2], " ", obj.position[i[2]]+sym[1][j]*dim[i[2]]/2)
-
-			}
-			fmt.Fprint(fid, "\n")
-		}
-	}
-}
-
-type Receiver struct {
-	point  []float64
-	radius float64
-}
-
-type Transmitter struct {
-	point []float64
-}
-
-var receiver Receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
-
-var transmitter Transmitter = Transmitter{point: []float64{-2.0174, -2.58, 0}}
-
-type Ray struct {
-	point     []float64
-	direction []float64
 }
 
 func isItInside(point []float64, obj Object) int {
@@ -197,7 +174,6 @@ func nextObject(presentIndex int, ray Ray, obstacles []Object) []float64 {
 		for poi_i := 0; poi_i < 3; poi_i++ {
 			poi_4[poi_i] = poi[poi_i]
 		}
-		//cout << poi_4[0] << "\t" << poi_4[1] << "\t" << poi_4[2] << endl;
 		tt := poi[3]
 		ii := poi[4]
 		if tt > 0.0 {
@@ -222,6 +198,36 @@ func nextObject(presentIndex int, ray Ray, obstacles []Object) []float64 {
 	return ans
 }
 
+var receiver Receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
+
+var transmitter Transmitter = Transmitter{point: []float64{-2.0174, -2.58, 0}}
+
+func getPoints(obj Object) {
+
+	sign := [][]float64{{1.0, -1.0, -1.0, 1.0}, {1.0, 1.0, -1.0, -1.0}}
+	size := []float64{obj.length / 2.0, obj.breadth / 2.0, obj.height / 2.0}
+	pos := []float64{obj.position[0], obj.position[1], obj.position[2]}
+	for i := 0; i < 3; i++ {
+		for j := -1; j <= 1; j = j + 2 {
+			t := make([][][]float64, len(data.Planes)+1)
+			copy(t, data.Planes)
+			data.Planes = t
+			var t2 [][]float64
+			for ii := 0; ii < 4; ii++ {
+				t3 := make([][]float64, len(t2)+1)
+				copy(t3, t2)
+				t2 = t3
+				t4 := []float64{0, 0, 0}
+				t4[i] = pos[i] + size[i]*float64(j)
+				t4[(i+1)%3] = pos[(i+1)%3] + size[(i+1)%3]*sign[0][ii]
+				t4[(i+2)%3] = pos[(i+2)%3] + size[(i+2)%3]*sign[1][ii]
+				t2[len(t3)-1] = t4
+			}
+			data.Planes[len(t)-1] = t2
+		}
+	}
+}
+
 func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Object, presentIndex int) int {
 	var index, iii int
 	t := 0.0
@@ -243,7 +249,7 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 		t = receiverCheck[0]
 		didItReach = 1
 	}
-	
+
 	//find the point of intersection and set it for next rays:
 	p := sum2(ray.point, dot(ray.direction, t))
 	pathLength = pathLength + t*math.Sqrt(sum(dot2(ray.direction, ray.direction)))
@@ -271,9 +277,23 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 		//fmt.Print("reached!")
 		timeOfReach := pathLength / 3e8
 		//fmt.Print(pathLength, "\n")
-		fmt.Fprint(fid, "Time ", timeOfReach, " ", fieldStrength, "\n")
-		fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
-		fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
+		//fmt.Fprint(fid, "Time ", timeOfReach, " ", fieldStrength, "\n")
+		{
+			t := make([][]float64, len(data.Time)+1)
+			copy(t, data.Time)
+			data.Time = t
+			data.Time[len(t)-1] = []float64{timeOfReach, fieldStrength}
+		}
+		//fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
+		{
+			t := make([][]float64, len(data.Points)+2)
+			copy(t, data.Points)
+			data.Points = t
+			data.Points[len(t)-2] = []float64{ray.point[0], ray.point[1], ray.point[2], float64(plotcode)}
+			data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
+		}
+		//fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
+		fmt.Print("|")
 		plotcode++
 		return 2
 	}
@@ -319,21 +339,40 @@ func raytrace(ray Ray, fieldStrength float64, pathLength float64, obstacles []Ob
 	}
 	trans_return := raytrace(transmittedRay, obstacles[index].t_coeff*fieldStrength, pathLength, obstacles, nextIndex)
 	if ref_return*trans_return >= 2 {
-		fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
-		fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
+		//fmt.Fprint(fid, ray.point[0], " ", ray.point[1], " ", ray.point[2], " ", plotcode, "\n")
+		//fmt.Fprint(fid, p[0], " ", p[1], " ", p[2], " ", plotcode, "\n")
+		{
+			t := make([][]float64, len(data.Points)+2)
+			copy(t, data.Points)
+			data.Points = t
+			data.Points[len(t)-2] = []float64{ray.point[0], ray.point[1], ray.point[2], float64(plotcode)}
+			data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
+		}
 		plotcode++
 	}
 	return ref_return * trans_return
 }
 
+type Data struct {
+	Receiver    []float64
+	Transmitter []float64
+	Planes      [][][]float64
+	Time        [][]float64
+	Points      [][]float64
+}
+
+var data Data
+
 func main() {
 
 	start := time.Now()
 
-	fid, _ = os.Create("outgo.dat")
+	fid, _ = os.Create("out.json")
 
-	fmt.Fprint(fid, "Receiver ", receiver.point[0], " ", receiver.point[1], " ", receiver.point[2], receiver.radius, "\n")
-	fmt.Fprint(fid, "Transmitter ", transmitter.point[0], " ", transmitter.point[1], " ", transmitter.point[2], "\n")
+	//fmt.Fprint(fid, "Receiver ", receiver.point[0], " ", receiver.point[1], " ", receiver.point[2], receiver.radius, "\n")
+	//fmt.Fprint(fid, "Transmitter ", transmitter.point[0], " ", transmitter.point[1], " ", transmitter.point[2], "\n")
+	data.Receiver = []float64{receiver.point[0], receiver.point[1], receiver.point[2], receiver.radius}
+	data.Transmitter = transmitter.point
 
 	Room := Object{length: 13, breadth: 8.6, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 1, position: []float64{0, 0, 0}}
 	getPoints(Room)
@@ -341,7 +380,7 @@ func main() {
 	Box := Object{length: 0.03, breadth: 2.5, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-3.6586, -2.163, 0}}
 	getPoints(Box)
 
-	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.845, 3.9775, 0}}
+	Box1 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{6.045, 3.9775, 0}}
 	getPoints(Box1)
 
 	Box2 := Object{length: 0.91, breadth: 0.645, height: 3, r_coeff: 0.4, t_coeff: 0, r_index: 2, position: []float64{-6.045, 3.9775, 0}}
@@ -355,10 +394,13 @@ func main() {
 
 	var obstacles []Object = []Object{Room, Box, Box1, Box2, Box3, Box4}
 
+	//receiver = Receiver{point: []float64{-5, -3.08, 0}, radius: 0.2241}
+	//move the receiver along a straight line??
+
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.02
-	fB := 0.02
+	fA := 0.005
+	fB := 0.005
 	count_rays := 0
 	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
@@ -369,7 +411,10 @@ func main() {
 		}
 	}
 
+	pinbytes, _ := json.Marshal(data)
+
+	fmt.Fprintln(fid, string(pinbytes))
 	fid.Close()
 	elapsed := time.Since(start)
-	fmt.Println("Processed ", count_rays, " rays in ", elapsed)
+	fmt.Println("\nProcessed ", count_rays, " rays in ", elapsed)
 }
