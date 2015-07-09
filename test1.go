@@ -174,7 +174,7 @@ func main() {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
 		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
 			rayX := codeutil.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
-			Raytrace(1, 0, obstacles, 0)
+			Raytrace(rayX, 1, 0, obstacles, 0)
 			count_rays++
 		}
 	}
