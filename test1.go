@@ -1,16 +1,24 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/user/codeutil"
 )
 
-func Raytrace(ray codeutil.Ray, fieldStrength float64, pathLength float64, obstacles []codeutil.Object, presentIndex int) int {
+type RayLog struct {
+	TimeOfReach   float64
+	FieldStrength float64
+	Points        []codeutil.Point3D
+	SegmentId     int
+}
+
+func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength float64, obstacles []codeutil.Object, presentIndex int, ch chan RayLog) int {
+	fmt.Println("I am ", rayid)
 	var index, iii int
 	t := 0.0
 
@@ -46,23 +54,27 @@ func Raytrace(ray codeutil.Ray, fieldStrength float64, pathLength float64, obsta
 			nextIndex = lo
 		}
 	}
-
+	var localLog RayLog
 	//did it reach?
 	if didItReach == 1 {
 		timeOfReach := pathLength / 3e8
-		{
-			t := make([][]float64, len(codeutil.Data.Time)+1)
-			copy(t, codeutil.Data.Time)
-			codeutil.Data.Time = t
-			codeutil.Data.Time[len(t)-1] = []float64{timeOfReach, fieldStrength}
-		}
-		{
-			t := make([][]float64, len(codeutil.Data.Points)+2)
-			copy(t, codeutil.Data.Points)
-			codeutil.Data.Points = t
-			codeutil.Data.Points[len(t)-2] = []float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(plotcode)}
-			codeutil.Data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
-		}
+		// {
+		// 	t := make([][]float64, len(codeutil.Data.Time)+1)
+		// 	copy(t, codeutil.Data.Time)
+		// 	codeutil.Data.Time = t
+		// 	codeutil.Data.Time[len(t)-1] = []float64{timeOfReach, fieldStrength}
+		// }
+		// {
+		// 	t := make([][]float64, len(codeutil.Data.Points)+2)
+		// 	copy(t, codeutil.Data.Points)
+		// 	codeutil.Data.Points = t
+		// 	codeutil.Data.Points[len(t)-2] = []float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(plotcode)}
+		// 	codeutil.Data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
+		// }
+		localLog.FieldStrength = fieldStrength
+		localLog.TimeOfReach = timeOfReach
+		localLog.Points = []codeutil.Point3D{ray.Point, p}
+		localLog.SegmentId = plotcode
 		fmt.Print("|")
 		plotcode++
 		return 2
@@ -105,21 +117,24 @@ func Raytrace(ray codeutil.Ray, fieldStrength float64, pathLength float64, obsta
 	//trace the reflected and refracted rays next:
 	ref_return := 1
 	if index == 0 || presentIndex == 0 {
-		ref_return = Raytrace(reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex)
+		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex, ch)
 	}
-	trans_return := Raytrace(transmittedRay, obstacles[index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex)
+	trans_return := Raytrace(rayid, transmittedRay, obstacles[index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex, ch)
 	if ref_return*trans_return >= 2 {
-		{
-			t := make([][]float64, len(codeutil.Data.Points)+2)
-			copy(t, codeutil.Data.Points)
-			codeutil.Data.Points = t
-			codeutil.Data.Points[len(t)-2] = []float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(plotcode)}
-			codeutil.Data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
-		}
+		// {
+		// 	t := make([][]float64, len(codeutil.Data.Points)+2)
+		// 	copy(t, codeutil.Data.Points)
+		// 	codeutil.Data.Points = t
+		// 	codeutil.Data.Points[len(t)-2] = []float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(plotcode)}
+		// 	codeutil.Data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
+		// }
+		localLog.Points = []codeutil.Point3D{ray.Point, p}
+		localLog.SegmentId = plotcode
 		plotcode++
 	}
 
-	// ch <- ray
+	ch <- localLog
+	defer wg.Done()
 	return ref_return * trans_return
 }
 
@@ -132,6 +147,8 @@ var plotcode int
 var receiver codeutil.Receiver = codeutil.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
 
 var transmitter codeutil.Transmitter = codeutil.Transmitter{Point: []float64{-2.0174, -2.58, 0}}
+
+var wg sync.WaitGroup
 
 func main() {
 
@@ -170,19 +187,33 @@ func main() {
 	fA := 0.05
 	fB := 0.05
 	count_rays := 0
+
+	ch := make(chan RayLog, 100)
 	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
 		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
 			rayX := codeutil.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
-			Raytrace(rayX, 1, 0, obstacles, 0)
+			wg.Add(1)
+			go func(rayX codeutil.Ray, count_rays int) {
+				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
+			}(rayX, count_rays)
 			count_rays++
+
 		}
 	}
 
-	pinbytes, _ := json.MarshalIndent(codeutil.Data, "", "\t")
+	wg.Wait()
+	for {
+		x, ok := <-ch
+		if !ok {
+			break
+		}
+		fmt.Println(x)
+	}
+	//pinbytes, _ := json.MarshalIndent(codeutil.Data, "", "\t")
 	// jd:= json.NewEncoder(fid)
 	// json.MarshalIndent(v, prefix, indent)
-	fmt.Fprintln(fid, string(pinbytes))
+	//fmt.Fprintln(fid, string(pinbytes))
 	fid.Close()
 	elapsed := time.Since(start)
 	fmt.Println("\nProcessed ", count_rays, " rays in ", elapsed)
