@@ -75,6 +75,8 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 		localLog.TimeOfReach = timeOfReach
 		localLog.Points = []codeutil.Point3D{ray.Point, p}
 		localLog.SegmentId = plotcode
+		ch <- localLog
+		wg.Done()
 		fmt.Print("|")
 		plotcode++
 		return 2
@@ -85,6 +87,8 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 
 	//if field falls below threshold (set as 0.1) then stop
 	if fieldStrength < 1e-7 {
+		ch <- localLog
+		wg.Done()
 		return 1
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
@@ -117,8 +121,15 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 	//trace the reflected and refracted rays next:
 	ref_return := 1
 	if index == 0 || presentIndex == 0 {
-		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex, ch)
+		wg.Add(1)
+		go func(rayid int, reflectedRay codeutil.Ray, fs float64, pathLength float64, presentIndex int, ch chan RayLog) {
+			ref_return = Raytrace(rayid, reflectedRay, fs, pathLength, obstacles, presentIndex, ch)
+		}(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, presentIndex, ch)
 	}
+	wg.Add(1)
+	go func(rayid int, transmittedRay codeutil.Ray, fs float64, pathLength float64, nextIndex int, ch chan RayLog) {
+		ref_return = Raytrace(rayid, transmittedRay, fs, pathLength, obstacles, nextIndex, ch)
+	}(rayid, transmittedRay, obstacles[presentIndex].T_coeff*fieldStrength, pathLength, nextIndex, ch)
 	trans_return := Raytrace(rayid, transmittedRay, obstacles[index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex, ch)
 	if ref_return*trans_return >= 2 {
 		// {
@@ -134,7 +145,7 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 	}
 
 	ch <- localLog
-	defer wg.Done()
+	wg.Done()
 	return ref_return * trans_return
 }
 
@@ -197,19 +208,24 @@ func main() {
 			go func(rayX codeutil.Ray, count_rays int) {
 				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
 			}(rayX, count_rays)
+			wg.Add(1)
+			go func(ch chan RayLog) {
+				for {
+					x, ok := <-ch
+					if !ok {
+						break
+					}
+					fmt.Println(x)
+				}
+				wg.Done()
+			}(ch)
 			count_rays++
 
 		}
 	}
 
 	wg.Wait()
-	for {
-		x, ok := <-ch
-		if !ok {
-			break
-		}
-		fmt.Println(x)
-	}
+
 	//pinbytes, _ := json.MarshalIndent(codeutil.Data, "", "\t")
 	// jd:= json.NewEncoder(fid)
 	// json.MarshalIndent(v, prefix, indent)
