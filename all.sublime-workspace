@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"print",
+				"Println	n int, err error ƒ"
+			],
+			[
 				"fl",
 				"float32	built-in ʈ"
 			],
@@ -32,6 +36,14 @@
 			"settings":
 			{
 				"buffer_size": 721,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/kunal/Desktop/code win64/src/t.go",
+			"settings":
+			{
+				"buffer_size": 718,
 				"line_ending": "Unix"
 			}
 		},
@@ -143,7 +155,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -159,8 +171,8 @@
 						"selection":
 						[
 							[
-								0,
-								721
+								146,
+								146
 							]
 						],
 						"settings":
@@ -172,11 +184,43 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
+					"file": "/home/kunal/Desktop/code win64/src/t.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 718,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								517,
+								517
+							]
+						],
+						"settings":
+						{
+							"rulers":
+							[
+							],
+							"syntax": "Packages/GoSublime/syntax/GoSublime-Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
 					"file": "/home/kunal/Desktop/code win64/src/test.csv",
 					"semi_transient": false,
 					"settings":
@@ -200,7 +244,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				}
 			]

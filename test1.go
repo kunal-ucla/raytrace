@@ -18,7 +18,6 @@ type RayLog struct {
 }
 
 func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength float64, obstacles []codeutil.Object, presentIndex int, ch chan RayLog) int {
-	fmt.Println("I am ", rayid)
 	var index, iii int
 	t := 0.0
 
@@ -76,9 +75,8 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 		localLog.Points = []codeutil.Point3D{ray.Point, p}
 		localLog.SegmentId = plotcode
 		ch <- localLog
-		wg.Done()
-		fmt.Print("|")
 		plotcode++
+		fmt.Print("|")
 		return 2
 	}
 
@@ -87,8 +85,6 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 
 	//if field falls below threshold (set as 0.1) then stop
 	if fieldStrength < 1e-7 {
-		ch <- localLog
-		wg.Done()
 		return 1
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!TO DO!!!!---find exact point where the ray dies----------------------------------------
@@ -121,15 +117,8 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 	//trace the reflected and refracted rays next:
 	ref_return := 1
 	if index == 0 || presentIndex == 0 {
-		wg.Add(1)
-		go func(rayid int, reflectedRay codeutil.Ray, fs float64, pathLength float64, presentIndex int, ch chan RayLog) {
-			ref_return = Raytrace(rayid, reflectedRay, fs, pathLength, obstacles, presentIndex, ch)
-		}(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, presentIndex, ch)
+		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex, ch)
 	}
-	wg.Add(1)
-	go func(rayid int, transmittedRay codeutil.Ray, fs float64, pathLength float64, nextIndex int, ch chan RayLog) {
-		ref_return = Raytrace(rayid, transmittedRay, fs, pathLength, obstacles, nextIndex, ch)
-	}(rayid, transmittedRay, obstacles[presentIndex].T_coeff*fieldStrength, pathLength, nextIndex, ch)
 	trans_return := Raytrace(rayid, transmittedRay, obstacles[index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex, ch)
 	if ref_return*trans_return >= 2 {
 		// {
@@ -139,13 +128,11 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 		// 	codeutil.Data.Points[len(t)-2] = []float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(plotcode)}
 		// 	codeutil.Data.Points[len(t)-1] = []float64{p[0], p[1], p[2], float64(plotcode)}
 		// }
-		localLog.Points = []codeutil.Point3D{ray.Point, p}
-		localLog.SegmentId = plotcode
-		plotcode++
+		// localLog.Points = []codeutil.Point3D{ray.Point, p}
+		// localLog.SegmentId = plotcode
+		// plotcode++
+		//ch <- localLog
 	}
-
-	ch <- localLog
-	wg.Done()
 	return ref_return * trans_return
 }
 
@@ -195,8 +182,8 @@ func main() {
 
 	//somehow start many rays from transmitter
 	fR := 0.6
-	fA := 0.05
-	fB := 0.05
+	fA := 0.005
+	fB := 0.005
 	count_rays := 0
 
 	ch := make(chan RayLog, 100)
@@ -207,24 +194,26 @@ func main() {
 			wg.Add(1)
 			go func(rayX codeutil.Ray, count_rays int) {
 				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
-			}(rayX, count_rays)
-			wg.Add(1)
-			go func(ch chan RayLog) {
-				for {
-					x, ok := <-ch
-					if !ok {
-						break
-					}
-					fmt.Println(x)
-				}
 				wg.Done()
-			}(ch)
+			}(rayX, count_rays)
 			count_rays++
-
 		}
 	}
+	go func() {
+		for {
+			x, ok := <-ch
+			if !ok {
+				close(ch)
+				break
+			}
+			fmt.Println(x)
+		}
+	}()
 
 	wg.Wait()
+
+	// var input string
+	// fmt.Scanln(&input)
 
 	//pinbytes, _ := json.MarshalIndent(codeutil.Data, "", "\t")
 	// jd:= json.NewEncoder(fid)
