@@ -82,33 +82,52 @@ func DistanceBetweenPoints(p1, p2 Point3D) float64 {
 }
 
 func GetPOI(ray Ray, obj Object) []float64 {
+	/*
+		What it returns:
+		1. Returns an array of size 4
+		2. First three elements represent the coordinates of the point of intersection of the ray with the object both passed as parameters to this function
+		3. The third element represents a parameter 't' which is proportional to the distance between the origin of ray and the point of intersection
+		4. This parameter 't' will be helpful in determining which object does the ray hits first:-the one which has the least 't' parameter
+	*/
+	/*
+		Algo:
+		1. It iterates through each of the six planes of the given object
+		2. Knowing the equation of each of the planes, point of intersection of the ray with each plane can be known
+		3. Thus, the 't' parameter(that is proportional to distance b/w POI and ray origin) of each plane can be calculated(and is stored in 'temp_t_of_plane_id_i' variable)
+		4. Next we have to know which of the six planes has the least and positive(+ve because the POI has to be along the direction of the ray and not in the backward direction) 't' parameter
+		5. The POI of this plane along with its 't' parameter and the id of the plane is thus returned.
+	*/
+	/*
+		What is 't' parameter afterall?:
+		1. Consider a ray originating from a 3D point (x,y,z) and travelling along a straight line whose direction is given by its direction ratios say (p,q,r)
+		2. Consider a 3D plane in the space. We have to find the point ON this plane through which the above ray passes i.e. their intersection point
+		3. We use the fact that any point lying on the given ray can be represented as (x,y,z) + t*(p,q,r) = (x+t*p, y+t*q, z+t*r) where t is any floating point number
+		4. Let the intersection point thus be (x+t*p, y+t*q, z+t*r)
+		5. Note that greater the magnitude of t, farther it is from the point of origin (x,y,z)
+		5. Since this lies on the plane with its plane equation say ax+by+cz+d=0; we can substitute the above point in this and thus find the value of t
+		6. We have thus found the intersection point along with a parameter 't' ! We will use this 't' to find the nearest intersection point.
+	*/
 	t := 0.0
-	i_min := -1
+	intersection_plane_index := -1 //This variable will store the index of the plane that the ray intersects (at which of the six planes does the intersection point lie?)
 	count := 0
-	for ii := 0; ii < 6; ii++ {
-		acc1 := Sum(Dot2(obj.GetEquations(ii), ray.Point))
-		acc2 := Sum(Dot2(obj.GetEquations(ii), ray.Direction))
-		tt := -1.0 * (obj.GetEquations(ii)[3] + acc1) / acc2
-		if tt > 0 && obj.IsItInside(Sum2(ray.Point, Dot(ray.Direction, tt))) == 1 {
-			if count == 0 {
-				i_min = ii
-				t = tt
-			} else if tt < t {
-				i_min = ii
-				t = tt
+	for i := 0; i < 6; i++ {
+		acc1 := Sum(Dot2(obj.GetEquations(i), ray.Point))
+		acc2 := Sum(Dot2(obj.GetEquations(i), ray.Direction))
+		temp_t_of_plane_id_i := -1.0 * (obj.GetEquations(i)[3] + acc1) / acc2
+		if temp_t_of_plane_id_i > 0 && obj.DoesItContain(Sum2(ray.Point, Dot(ray.Direction, temp_t_of_plane_id_i))) == 1 {
+			if count == 0 || temp_t_of_plane_id_i < t {
+				intersection_plane_index = i
+				t = temp_t_of_plane_id_i
 			}
 			count++
 		}
 	}
-	var ip = []float64{0, 0, 0, 0, 0}
-	ip[3] = t
-	ip[4] = float64(i_min)
-	var safe_ip = []float64{0, 0, 0}
-	safe_ip = Sum2(ray.Point, Dot(ray.Direction, t))
+	intersection_point_coordinates := Sum2(ray.Point, Dot(ray.Direction, t))
+	var result_to_be_returned = []float64{0, 0, 0, t, float64(intersection_plane_index)}
 	for i := 0; i < 3; i++ {
-		ip[i] = safe_ip[i]
+		result_to_be_returned[i] = intersection_point_coordinates[i]
 	}
-	return ip
+	return result_to_be_returned
 }
 
 func IsSameSide(p1 []float64, p2 []float64, plane []float64) float64 {
@@ -126,50 +145,48 @@ func IsSameSide(p1 []float64, p2 []float64, plane []float64) float64 {
 }
 
 func DoesItPass(ray Ray, rec Receiver) []float64 {
-	var ans = []float64{0, 0}
-	ans[0] = Sum(Dot2(Sum2(rec.Point, Dot(ray.Point, -1.0)), ray.Direction)) / Sum(Dot2(ray.Direction, ray.Direction))
-	p := Sum2(Sum2(ray.Point, Dot(rec.Point, -1.0)), Dot(ray.Direction, ans[0]))
-	if math.Sqrt(Sum(Dot2(p, p))) <= rec.Radius && ans[0] > 0.0 {
-		ans[1] = 1
+	/*
+		What it returns:
+		1. It returns an array of size two.
+		2. The first element of the array (is similar to the parameter 't') determines the point on the ray nearest to the center of the receiver
+		3. The seond element of the array (1 or 0) tells us whether or not the ray falls in the receiver region i.e. whether the above point is@distance<receiverRadius from receiverCenter
+	*/
+	var result_to_be_returned = []float64{0, 0}
+	result_to_be_returned[0] = Sum(Dot2(Sum2(rec.Point, Dot(ray.Point, -1.0)), ray.Direction)) / Sum(Dot2(ray.Direction, ray.Direction))
+	p := Sum2(Sum2(ray.Point, Dot(rec.Point, -1.0)), Dot(ray.Direction, result_to_be_returned[0]))
+	//The magnitude of the above vector(array) 'p' will determine the shortest distance b/w the ray and the center of the receiver
+	if math.Sqrt(Sum(Dot2(p, p))) <= rec.Radius && result_to_be_returned[0] > 0.0 {
+		result_to_be_returned[1] = 1
 	} else {
-		ans[1] = 0
+		result_to_be_returned[1] = 0
 	}
-	return ans
+	return result_to_be_returned
 }
 
-func NextObject(presentIndex int, ray Ray, obstacles []Object) []float64 {
-	count := 0
-	index := -1
-	iii := -1
+func NextObject(presentIndex int, ray Ray, obstacles []Object) (float64, int, int) {
+	/*
+		Algo:
+		1. First find the intersection point of the ray with every object in the room (including the room itself as an object) using GetPOI
+		2. Then the return the least of the 't' parameters collected by the previous step
+		3. That will give us the next point from which we have to generate further rays(both transmitted and reflected)
+	*/
 	t := 0.0
+	next_object_index := 0
+	next_plane_index := 0
+	count := 0
 	for i := 0; i < len(obstacles); i++ {
 		poi := GetPOI(ray, obstacles[i])
-		var poi_4 = []float64{0, 0, 0, 0}
-		for poi_i := 0; poi_i < 3; poi_i++ {
-			poi_4[poi_i] = poi[poi_i]
-		}
-		tt := poi[3]
-		ii := poi[4]
-		if tt > 0.0 {
-			if count == 0 {
-				index = i
-				t = tt
-				iii = int(ii)
-			} else if presentIndex == i {
-				//do nothing
-			} else if tt < t {
-				index = i
-				t = tt
-				iii = int(ii)
+		t_parameter_of_object_i := poi[3]
+		if t_parameter_of_object_i > 0.0 {
+			if count == 0 || t_parameter_of_object_i < t {
+				t = t_parameter_of_object_i
+				next_object_index = i
+				next_plane_index = int(poi[4])
 			}
 			count++
 		}
 	}
-	var ans = []float64{0, 0, 0}
-	ans[0] = t
-	ans[1] = float64(iii)
-	ans[2] = float64(index)
-	return ans
+	return t, next_object_index, next_plane_index
 }
 
 func (obj Object) GetEquations(i int) []float64 {
@@ -192,7 +209,7 @@ func (obj Object) GetEquations(i int) []float64 {
 	return ans
 }
 
-func (obj Object) IsItInside(point Point3D) int {
+func (obj Object) DoesItContain(point Point3D) int {
 	check := 0
 	for i := 0; i < 6; i++ {
 		woo1 := Dot2(obj.GetEquations(i), obj.Position)
