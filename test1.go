@@ -30,9 +30,9 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 	if t == 0 {
 		return 1 //<----------------------------------!!!!TO DO!!!!---return point where ray dies------------------------------------------------
 	}
-
+	var receiverLocal codeutil.Receiver = codeutil.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
 	//check if it enters receiver region:
-	receiverCheck := codeutil.DoesItPass(ray, receiver)
+	receiverCheck := codeutil.DoesItPass(ray, receiverLocal)
 	didItReach := 0
 	if receiverCheck[1] == 1 && receiverCheck[0] < t {
 		t = receiverCheck[0]
@@ -73,9 +73,9 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 		localLog.FieldStrength = fieldStrength
 		localLog.TimeOfReach = timeOfReach
 		localLog.Points = []codeutil.Point3D{ray.Point, p}
-		localLog.SegmentId = plotcode
+		//localLog.SegmentId = plotcode
 		ch <- localLog
-		plotcode++
+		//plotcode++
 		fmt.Print("|")
 		return 2
 	}
@@ -146,7 +146,9 @@ var receiver codeutil.Receiver = codeutil.Receiver{Point: []float64{-5, -3.08, 0
 
 var transmitter codeutil.Transmitter = codeutil.Transmitter{Point: []float64{-2.0174, -2.58, 0}}
 
-var wg sync.WaitGroup
+// func init() {
+// 	runtime.GOMAXPROCS(runtime.NumCPU())
+// }
 
 func main() {
 
@@ -186,19 +188,8 @@ func main() {
 	fB := 0.005
 	count_rays := 0
 
-	ch := make(chan RayLog, 100)
-	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
-		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
-		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
-			rayX := codeutil.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
-			wg.Add(1)
-			go func(rayX codeutil.Ray, count_rays int) {
-				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
-				wg.Done()
-			}(rayX, count_rays)
-			count_rays++
-		}
-	}
+	ch := make(chan RayLog, 100000)
+
 	go func() {
 		for {
 			x, ok := <-ch
@@ -209,6 +200,21 @@ func main() {
 			fmt.Println(x)
 		}
 	}()
+
+	var wg sync.WaitGroup
+	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
+		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
+		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
+			rayX := codeutil.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
+			wg.Add(1)
+			go func(rayX codeutil.Ray, count_rays int) {
+				fmt.Println(count_rays)
+				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
+				wg.Done()
+			}(rayX, count_rays)
+			count_rays++
+		}
+	}
 
 	wg.Wait()
 
@@ -222,4 +228,5 @@ func main() {
 	fid.Close()
 	elapsed := time.Since(start)
 	fmt.Println("\nProcessed ", count_rays, " rays in ", elapsed)
+	//fmt.Println("cpus num: ", runtime.NumCPU())
 }

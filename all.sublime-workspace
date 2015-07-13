@@ -43,7 +43,7 @@
 			"file": "/home/kunal/Desktop/code win64/src/t.go",
 			"settings":
 			{
-				"buffer_size": 718,
+				"buffer_size": 819,
 				"line_ending": "Unix"
 			}
 		},
@@ -76,7 +76,7 @@
 				"GoImports"
 			]
 		],
-		"width": 349.0
+		"width": 363.0
 	},
 	"console":
 	{
@@ -193,15 +193,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 718,
+						"buffer_size": 819,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								517,
-								517
+								389,
+								389
 							]
 						],
 						"settings":
@@ -213,7 +213,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 180.0,
+						"translation.y": 181.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
