@@ -8,7 +8,7 @@ from math import *
 import sys
 import json
 
-with open('out.json') as data_file:    
+with open(sys.argv[1]) as data_file:    
     data = json.load(data_file)
 
 x = []
