@@ -38,6 +38,11 @@ type Ray struct {
 }
 
 func Dot(a []float64, b float64) []float64 {
+	/*
+		What it does:
+		1. Returns the product of a scalar and an array
+		2. The array should be of type []float64 only and the scalar should be of type float64 only
+	*/
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
 		c[i] = a[i] * b
@@ -45,9 +50,12 @@ func Dot(a []float64, b float64) []float64 {
 	return c
 }
 
-//returns the sum of the elements of an array
-//the array should be of type []float64 only and the scalar should be of type float64 only
 func Sum(a []float64) float64 {
+	/*
+		What it does:
+		1. Returns the sum of the elements of an array
+		2. The array should be of type []float64 only
+	*/
 	var c float64
 	for i := 0; i < 3; i++ {
 		c = c + a[i]
@@ -55,9 +63,12 @@ func Sum(a []float64) float64 {
 	return c
 }
 
-//returns the dot product of two vectors(arrays)
-//the array should be of type []float64 only
 func Dot2(a, b []float64) []float64 {
+	/*
+		What it does:
+		1. Returns the dot product of two vectors(arrays)
+		2. The array should be of type []float64 only
+	*/
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
 		c[i] = a[i] * b[i]
@@ -65,20 +76,17 @@ func Dot2(a, b []float64) []float64 {
 	return c
 }
 
-//returns the sum of two vectors(arrays)
-//the array should be of type []float64 only
 func Sum2(a, b []float64) []float64 {
+	/*
+		What it does:
+		1. Returns the sum of two vectors(arrays)
+		2. The array should be of type []float64 only
+	*/
 	var c = []float64{0, 0, 0}
 	for i := 0; i < 3; i++ {
 		c[i] = a[i] + b[i]
 	}
 	return c
-}
-
-func DistanceBetweenPoints(p1, p2 Point3D) float64 {
-	var ans float64
-	ans = math.Sqrt(math.Pow(p1[0]-p2[0], 2) + math.Pow(p1[1]-p2[1], 2) + math.Pow(p1[2]-p2[2], 2))
-	return ans
 }
 
 func GetPOI(ray Ray, obj Object) []float64 {
@@ -167,8 +175,10 @@ func NextObject(presentIndex int, ray Ray, obstacles []Object) (float64, int, in
 	/*
 		Algo:
 		1. First find the intersection point of the ray with every object in the room (including the room itself as an object) using GetPOI
-		2. Then the return the least of the 't' parameters collected by the previous step
+		2. Then return the least of the 't' parameters collected by the previous step
 		3. That will give us the next point from which we have to generate further rays(both transmitted and reflected)
+		4. Also return the index of the object and the index of its plane at which the ray is going to fall
+		5. Note: In all the cases, the 't' parameter always has to be positive i.e. >0. A negative 't' means a point in the backward direction of the ray.
 	*/
 	t := 0.0
 	next_object_index := 0
@@ -190,7 +200,14 @@ func NextObject(presentIndex int, ray Ray, obstacles []Object) (float64, int, in
 }
 
 func (obj Object) GetEquations(i int) []float64 {
-
+	/*
+		What it returns:
+		0. Note that here 'i' is the index of the plane of the object whose equations are to be determined
+		1. It returns the equation of the 'i'th plane of the object 'obj'
+		2. The format is []float64{a,b,c,d} if the equation of plane is: ax+by+cz+d=0
+		3. Here we have assumed that the object is always cuboidal and its surfaces are parallel to the x, y or z axes.
+		4. The above point explains the fact that the first three numbers i.e. {a,b,c} are always from among {0,0,1}
+	*/
 	var ans []float64
 	switch i {
 	case 0:
@@ -210,6 +227,17 @@ func (obj Object) GetEquations(i int) []float64 {
 }
 
 func (obj Object) DoesItContain(point Point3D) int {
+	/*
+		What does it do:
+		1. It checks if an object contains a given point inside it or not
+		2. And returns 1 if it does, 0 if doesn't
+	*/
+	/*
+		Algo:
+		1. It verifies that the given point and the center of the object lie on the SAME side of each of the 6 planes of the object.
+		2. If it lies on opposite side of the center w.r.t. atleast one of the 6 planes, then it means that the point is NOT inside the object.
+		3. If equation of plane is ax+by+cz+d=0; then all points-(x1,y1,z1) on the SAME side of it satisfy ax1+by1+cz1+d either all >0 or all <0
+	*/
 	check := 0
 	for i := 0; i < 6; i++ {
 		woo1 := Dot2(obj.GetEquations(i), obj.Position)
@@ -229,8 +257,14 @@ func (obj Object) DoesItContain(point Point3D) int {
 	}
 }
 
-func (obj Object) GetPoints() {
-
+func (obj Object) PrintObjectData() {
+	/*
+		What it does:
+		1. It stores the plane data of each of the six planes of the object in the global variable 'Data'
+		2. The plane data of each plane which is essentially a rectangle consists of the coordinates of each of its 4 corners
+		3. This data is finally converted into a json format and printed into the json output file
+		4. Plotting of the object boundaries will be done using this data.
+	*/
 	sign := [][]float64{{1.0, -1.0, -1.0, 1.0}, {1.0, 1.0, -1.0, -1.0}}
 	size := []float64{obj.Length / 2.0, obj.Breadth / 2.0, obj.Height / 2.0}
 	pos := []float64{obj.Position[0], obj.Position[1], obj.Position[2]}
