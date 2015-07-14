@@ -2,12 +2,18 @@ package codeutil
 
 import "math"
 
+type ProcessData struct {
+	TimeTaken float64
+	NumCores  int
+}
+
 type JsonData struct {
 	Receiver    []float64
 	Transmitter []float64
 	Planes      [][][]float64
 	Time        [][]float64
 	Points      [][]float64
+	Process     ProcessData
 }
 
 var Data JsonData
