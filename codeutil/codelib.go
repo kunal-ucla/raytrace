@@ -1,9 +1,12 @@
 package codeutil
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 type ProcessData struct {
-	TimeTaken float64
+	TimeTaken time.Duration
 	NumCores  int
 }
 

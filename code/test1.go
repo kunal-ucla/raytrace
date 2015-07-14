@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -153,12 +152,12 @@ var transmitter codeutil.Transmitter = codeutil.Transmitter{Point: []float64{-2.
 
 func main() {
 
-	numCores, _ := strconv.Atoi(os.Args[1])
-	runtime.GOMAXPROCS(numCores)
+	//numCores, _ := strconv.Atoi(os.Args[1])
+	runtime.GOMAXPROCS(2)
 
 	start := time.Now()
 
-	fid, _ = os.Create("out_" + os.Args[1] + "_cores.json")
+	fid, _ = os.Create("out_2_cores.json")
 
 	codeutil.Data.Receiver = []float64{receiver.Point[0], receiver.Point[1], receiver.Point[2], receiver.Radius}
 	codeutil.Data.Transmitter = transmitter.Point
@@ -233,8 +232,8 @@ func main() {
 
 	elapsed := time.Since(start)
 	fmt.Println("\nDone!!!\nProcessed ", count_rays, " rays in ", elapsed)
-	codeutil.Data.Process.TimeTaken = float64(elapsed)
-	codeutil.Data.Process.NumCores = int(numCores)
+	codeutil.Data.Process.TimeTaken = elapsed
+	codeutil.Data.Process.NumCores = 2
 
 	/*Print the sotred data into the out.json file*/
 	pinbytes, _ := json.MarshalIndent(codeutil.Data, "", "\t")
