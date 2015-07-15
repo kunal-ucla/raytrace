@@ -18,7 +18,7 @@ type RayLog struct {
 	DidItReach int
 }
 
-func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength float64, obstacles []codeutil.Object, presentIndex int, ch chan RayLog) int {
+func Raytrace(rayid *int, ray codeutil.Ray, fieldStrength float64, pathLength float64, obstacles []codeutil.Object, presentIndex int, ch chan RayLog) int {
 
 	/*Find the next obstacle in the path of the ray:*/
 	t, next_object_index, next_plane_index := codeutil.NextObject(-1, ray, obstacles)
@@ -87,10 +87,10 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 	if didItReach == 1 {
 		timeOfReach := pathLength / 3e8
 		localLog.Time = []float64{timeOfReach, fieldStrength}
-		localLog.Points = []codeutil.Point3D{[]float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(rayid)}, []float64{nextPoint[0], nextPoint[1], nextPoint[2], float64(rayid)}}
+		localLog.Points = []codeutil.Point3D{[]float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(*rayid)}, []float64{nextPoint[0], nextPoint[1], nextPoint[2], float64(*rayid)}}
 		localLog.DidItReach = didItReach
+		*rayid = *(rayid) + 1
 		ch <- localLog
-		rayid++
 		fmt.Print("|")
 		return 2
 	}
@@ -103,41 +103,24 @@ func Raytrace(rayid int, ray codeutil.Ray, fieldStrength float64, pathLength flo
 		return 1
 	}
 
-	/*Set the direction ratios of the reflected ray here:*/
-	acc1 := codeutil.Sum(codeutil.Dot2(ray.Direction, ray.Direction))
-	acc2 := -1.0 * (codeutil.Sum(codeutil.Dot2(ray.Direction, obstacles[next_object_index].GetEquations(next_plane_index))))
-	acc3 := codeutil.Sum(codeutil.Dot2(obstacles[next_object_index].GetEquations(next_plane_index), obstacles[next_object_index].GetEquations(next_plane_index))) - math.Pow(obstacles[next_object_index].GetEquations(next_plane_index)[3], 2)
-	t = acc2 / acc1
-	normal_check1 := codeutil.Sum2(nextPoint, codeutil.Dot(ray.Direction, small_t))
-	normal_check2 := codeutil.Sum2(nextPoint, codeutil.Dot(obstacles[next_object_index].GetEquations(next_plane_index), small_t))
-	f_normal := -1.0 * codeutil.IsSameSide(normal_check1, normal_check2, obstacles[next_object_index].GetEquations(next_plane_index))
-	i_dot_n := 2.0 * acc2 // * f_normal;
-	ans := codeutil.Sum2(codeutil.Dot(obstacles[next_object_index].GetEquations(next_plane_index), i_dot_n), ray.Direction)
-	reflectedRay.Direction = ans
-
-	/*Set the direction ratios of the transmitted ray here:*/
-	cosTheta1 := -acc2 / math.Sqrt(acc1*acc3)
-	sinTheta1 := math.Sin(math.Acos(cosTheta1))
-	n := obstacles[presentIndex].R_index / obstacles[nextIndex].R_index
-	sinTheta2 := n * sinTheta1
-	t_c := -1.0 * math.Sqrt(1-math.Pow(sinTheta2, 2)) / math.Sqrt(acc3)
-	lollipop := f_normal * cosTheta1 / math.Sqrt(acc3)
-	t_par := codeutil.Dot(codeutil.Sum2(codeutil.Dot(ray.Direction, 1/math.Sqrt(acc1)), codeutil.Dot(obstacles[next_object_index].GetEquations(next_plane_index), lollipop)), 2)
-	t_per := codeutil.Dot(obstacles[next_object_index].GetEquations(next_plane_index), f_normal*t_c)
-	t_total := codeutil.Sum2(t_par, t_per)
-	transmittedRay.Direction = t_total
+	/*Get the direction of reflected and the transmitted rays*/
+	reflectedRay.Direction, transmittedRay.Direction = codeutil.GetNextRaysDirection(ray, obstacles, presentIndex, nextIndex, next_object_index, next_plane_index, small_t, nextPoint)
 
 	/*Trace the reflected and refracted rays next:*/
 	ref_return := 1
 	if next_object_index == 0 || presentIndex == 0 {
+		/*The purpose of if condition here: Reflection should take place only if the ray is hitting on walls of room OR the OUTER surface of an object*/
+		/*Ray travelling in the room medium(and not inside any object) would imply that presentIndex = 0*/
+		/*OR maybe that the ray is travelling inside an object which is touching one of the walls of the room; and the ray is hitting that wall; => next_object_index = 0*/
 		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex, ch)
 	}
 	trans_return := Raytrace(rayid, transmittedRay, obstacles[next_object_index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex, ch)
+
 	if ref_return*trans_return >= 2 {
 		localLog.DidItReach = didItReach
-		localLog.Points = []codeutil.Point3D{[]float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(rayid)}, []float64{nextPoint[0], nextPoint[1], nextPoint[2], float64(rayid)}}
+		localLog.Points = []codeutil.Point3D{[]float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(*rayid)}, []float64{nextPoint[0], nextPoint[1], nextPoint[2], float64(*rayid)}}
+		*rayid = *(rayid) + 1
 		ch <- localLog
-		rayid++
 	}
 	return ref_return * trans_return
 }
@@ -159,6 +142,7 @@ func main() {
 
 	fid, _ = os.Create("out_2_cores.json")
 
+	/*Create objects including the room itself*/
 	codeutil.Data.Receiver = []float64{receiver.Point[0], receiver.Point[1], receiver.Point[2], receiver.Radius}
 	codeutil.Data.Transmitter = transmitter.Point
 
@@ -184,9 +168,10 @@ func main() {
 
 	/*Initiate the rays from transmitter*/
 	fR := 0.6
-	fA := 0.05
-	fB := 0.05
+	fA := 0.005
+	fB := 0.005
 	count_rays := 0
+	rayid := 0
 
 	ch := make(chan RayLog, 100000)
 
@@ -221,7 +206,7 @@ func main() {
 			rayX := codeutil.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
 			wg.Add(1)
 			go func(rayX codeutil.Ray, count_rays int) {
-				Raytrace(count_rays, rayX, 1, 0, obstacles, 0, ch)
+				Raytrace(&rayid, rayX, 1, 0, obstacles, 0, ch)
 				wg.Done()
 			}(rayX, count_rays)
 			count_rays++
