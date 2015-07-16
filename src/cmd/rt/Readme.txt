@@ -1,9 +1,4 @@
-To run the code:
-	cd code
-	go run test1.go
-
-Output file: code/out_*_cores.json
-
-To plot the reults:
-	cd code
-	python plot2.py out_*_cores.json
+Directions to run the code (you have to be in this folder only i.e. $PATH_TO_YOUR_GIT_REPO/src/cmd/rt ):
+	# go run main.go 4 -p
+	4 -> number of cores
+	-p -> flag for plotting the results[this needs the code to be run from this folder only]
