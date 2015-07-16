@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
+	rt "raytracing"
 	"runtime"
 	"strconv"
 	"sync"
 	"time"
-	rt "raytracing"
 )
-
- 
 
 type RayLog struct {
 	Time       []float64
@@ -141,15 +140,15 @@ func main() {
 
 	var numCores int = 1
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 2 || (len(os.Args) == 2 && os.Args[1] == "-p") {
 		runtime.GOMAXPROCS(1)
-		fid, _ = os.Create("out_1_core.json")
-		fmt.Println("Writing to out_1_core.json")
+		fid, _ = os.Create("json/out_1_cores.json")
+		fmt.Println("Writing to json/out_1_cores.json")
 	} else {
 		numCores, _ = strconv.Atoi(os.Args[1])
 		runtime.GOMAXPROCS(numCores)
-		fid, _ = os.Create("out_" + os.Args[1] + "_cores.json")
-		fmt.Println("Writing to out_", os.Args[1], "_cores.json")
+		fid, _ = os.Create("json/out_" + os.Args[1] + "_cores.json")
+		fmt.Printf("Writing to json/out_%s_cores.json\n", os.Args[1])
 	}
 
 	/*Create objects including the room itself*/
@@ -178,8 +177,8 @@ func main() {
 
 	/*Initiate the rays from transmitter*/
 	fR := 0.6
-	fA := 0.005
-	fB := 0.005
+	fA := 0.05
+	fB := 0.05
 	count_rays := 0
 	rayid := 0
 	max_count := 0
@@ -246,4 +245,10 @@ func main() {
 	json.MarshalIndent(jd, "", "\t")
 	fmt.Fprintln(fid, string(pinbytes))
 	fid.Close()
+
+	if len(os.Args) > 2 {
+		exec.Command("python", "py/plot.py", "json/out_"+os.Args[1]+"_cores.json").Run()
+	} else if len(os.Args) == 2 && os.Args[1] == "-p" {
+		exec.Command("python", "py/plot.py", "json/out_1_cores.json").Run()
+	}
 }
