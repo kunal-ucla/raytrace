@@ -9,8 +9,10 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"raytracing"
+	rt "raytracing"
 )
+
+ 
 
 type RayLog struct {
 	Time       []float64
@@ -235,8 +237,8 @@ func main() {
 	fmt.Println("\rDone processing all the rays!!!!\t\t\t")
 	fmt.Println("Processed ", count_rays, " rays in ", elapsed)
 	rt.Data.Process.NumCores = 2
-	codeutil.Data.Process.NumCores = numCores
-	codeutil.Data.Process.NumRays = max_count
+	rt.Data.Process.NumCores = numCores
+	rt.Data.Process.NumRays = max_count
 
 	/*Print the sotred data into the out.json file*/
 	pinbytes, _ := json.MarshalIndent(rt.Data, "", "\t")
