@@ -8,6 +8,7 @@ import (
 type ProcessData struct {
 	TimeTaken time.Duration
 	NumCores  int
+	NumRays   int
 }
 
 type JsonData struct {

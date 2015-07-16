@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 	"raytracing"
@@ -90,7 +91,7 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 		localLog.DidItReach = didItReach
 		*rayid = *(rayid) + 1
 		ch <- localLog
-		fmt.Print("|")
+		//fmt.Print("|")
 		return 2
 	}
 
@@ -134,12 +135,20 @@ var transmitter rt.Transmitter = rt.Transmitter{Point: []float64{-2.0174, -2.58,
 
 func main() {
 
-	//numCores, _ := strconv.Atoi(os.Args[1])
-	runtime.GOMAXPROCS(2)
-
 	start := time.Now()
 
-	fid, _ = os.Create("out_2_cores.json")
+	var numCores int = 1
+
+	if len(os.Args) < 2 {
+		runtime.GOMAXPROCS(1)
+		fid, _ = os.Create("out_1_core.json")
+		fmt.Println("Writing to out_1_core.json")
+	} else {
+		numCores, _ = strconv.Atoi(os.Args[1])
+		runtime.GOMAXPROCS(numCores)
+		fid, _ = os.Create("out_" + os.Args[1] + "_cores.json")
+		fmt.Println("Writing to out_", os.Args[1], "_cores.json")
+	}
 
 	/*Create objects including the room itself*/
 	rt.Data.Receiver = []float64{receiver.Point[0], receiver.Point[1], receiver.Point[2], receiver.Radius}
@@ -171,8 +180,15 @@ func main() {
 	fB := 0.005
 	count_rays := 0
 	rayid := 0
+	max_count := 0
+	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
+		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
+		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
+			max_count++
+		}
+	}
 
-	ch := make(chan RayLog, 100000)
+	ch := make(chan RayLog)
 
 	go func() {
 		for {
@@ -207,6 +223,7 @@ func main() {
 			go func(rayX rt.Ray, count_rays int) {
 				Raytrace(&rayid, rayX, 1, 0, obstacles, 0, ch)
 				wg.Done()
+				fmt.Print("\r", "Loading ", count_rays, "/", max_count)
 			}(rayX, count_rays)
 			count_rays++
 		}
@@ -215,9 +232,11 @@ func main() {
 	wg.Wait()
 
 	elapsed := time.Since(start)
-	fmt.Println("\nDone!!!\nProcessed ", count_rays, " rays in ", elapsed)
-	rt.Data.Process.TimeTaken = elapsed
+	fmt.Println("\rDone processing all the rays!!!!\t\t\t")
+	fmt.Println("Processed ", count_rays, " rays in ", elapsed)
 	rt.Data.Process.NumCores = 2
+	codeutil.Data.Process.NumCores = numCores
+	codeutil.Data.Process.NumRays = max_count
 
 	/*Print the sotred data into the out.json file*/
 	pinbytes, _ := json.MarshalIndent(rt.Data, "", "\t")
