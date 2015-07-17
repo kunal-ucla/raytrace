@@ -177,8 +177,8 @@ func main() {
 
 	/*Initiate the rays from transmitter*/
 	fR := 0.6
-	fA := 0.05
-	fB := 0.05
+	fA := 0.005
+	fB := 0.005
 	count_rays := 0
 	rayid := 0
 	max_count := 0
@@ -216,18 +216,20 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
-		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
-		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
-			rayX := rt.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
-			wg.Add(1)
-			go func(rayX rt.Ray, count_rays int) {
-				Raytrace(&rayid, rayX, 1, 0, obstacles, 0, ch)
-				wg.Done()
-				fmt.Print("\r", "Loading ", count_rays, "/", max_count)
-			}(rayX, count_rays)
-			count_rays++
-		}
+	for i := 0; i < numCores; i++ {
+		wg.Add(1)
+		go func(i int) {
+			for fi := -fB*float64(int(fR/fB)) + float64(i)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi <= -fB*float64(int(fR/fB))+float64(i+1)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi = fi + fB {
+				fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
+				for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
+					rayX := rt.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
+					Raytrace(&rayid, rayX, 1, 0, obstacles, 0, ch)
+					fmt.Print("\r", "Loading ", count_rays, "/", max_count)
+					count_rays++
+				}
+			}
+			wg.Done()
+		}(i)
 	}
 
 	wg.Wait()
