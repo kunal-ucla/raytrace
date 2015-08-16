@@ -12,15 +12,21 @@ type ProcessData struct {
 }
 
 type JsonData struct {
-	Receiver    []float64
-	Transmitter []float64
-	Planes      [][][]float64
-	Time        [][]float64
-	Points      [][]float64
-	Process     ProcessData
+	Receiver     []float64
+	Transmitter  []float64
+	TimeAndField [][]float64
+	Points       [][]float64
+	Process      ProcessData
+	TotalField   float64
+	Index        []int
 }
 
-var Data JsonData
+type JsonDataArray struct {
+	Data   [11][11]JsonData
+	Planes [][][]float64
+}
+
+var DataArray JsonDataArray
 
 type Point3D []float64
 
@@ -28,7 +34,7 @@ type Plane3D []Point3D
 
 type Object struct {
 	Length, Breadth, Height   float64
-	Position                  Point3D
+	Position                  Point3D //center location of the object
 	R_coeff, T_coeff, R_index float64
 }
 
@@ -267,7 +273,7 @@ func (obj Object) DoesItContain(point Point3D) int {
 	}
 }
 
-func (obj Object) PrintObjectData() {
+func (obj Object) SaveObjectData() {
 	/*
 		What it does:
 		+ It stores the plane data of each of the six planes of the object in the global variable 'Data'
@@ -280,9 +286,9 @@ func (obj Object) PrintObjectData() {
 	pos := []float64{obj.Position[0], obj.Position[1], obj.Position[2]}
 	for i := 0; i < 3; i++ {
 		for j := -1; j <= 1; j = j + 2 {
-			t := make([][][]float64, len(Data.Planes)+1)
-			copy(t, Data.Planes)
-			Data.Planes = t
+			t := make([][][]float64, len(DataArray.Planes)+1)
+			copy(t, DataArray.Planes)
+			DataArray.Planes = t
 			var t2 [][]float64
 			for ii := 0; ii < 4; ii++ {
 				t3 := make([][]float64, len(t2)+1)
@@ -294,7 +300,7 @@ func (obj Object) PrintObjectData() {
 				t4[(i+2)%3] = pos[(i+2)%3] + size[(i+2)%3]*sign[1][ii]
 				t2[len(t3)-1] = t4
 			}
-			Data.Planes[len(t)-1] = t2
+			DataArray.Planes[len(t)-1] = t2
 		}
 	}
 }

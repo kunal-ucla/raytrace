@@ -6,11 +6,10 @@ from mpl_toolkits.mplot3d import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from math import *
 import sys
+import json
 
-with open(sys.argv[1]) as f:
-    data = f.read()
-
-data = data.split('\n')
+with open(sys.argv[1]) as data_file:    
+    data = json.load(data_file)
 
 x = []
 y = []
@@ -22,52 +21,23 @@ transmitter = []
 pdp_time = []
 pdp_field = []
 
-for row in data:
-	if(row.split(" ")[0] == "planes"):
-		x_plane = []
-		y_plane = []
-		z_plane = []
-		plane = []
-		for i in range(2, 26, 2):
-			if row.split(" ")[i-1] == "0":
-				x_plane.append(row.split(" ")[i])
-			if row.split(" ")[i-1] == "1":
-				y_plane.append(row.split(" ")[i])
-			if row.split(" ")[i-1] == "2":
-				z_plane.append(row.split(" ")[i])
-		x_plane = [float(g) for g in x_plane]
-		y_plane = [float(g) for g in y_plane]
-		z_plane = [float(g) for g in z_plane]
-		plane.append(x_plane)
-		plane.append(y_plane)
-		plane.append(z_plane)
-		all_planes.append(plane)
-	elif row.split(" ")[0] == "Receiver":
-		receiver = row.split(" ")[1:]
-		receiver = [float(g) for g in receiver]
-	elif row.split(" ")[0] == "Transmitter":
-		transmitter = row.split(" ")[1:]
-		transmitter = [float(g) for g in transmitter]
-	elif row.split(" ")[0] == "Time":
-		if float(row.split(" ")[2]) > 0:
-			pdp_time.append(1e9 * float(row.split(" ")[1]))
-			pdp_field.append(10*log(float(row.split(" ")[2]),10))
-		continue#do nothing
-	elif row.split(" ")[0] == "":
-		continue#do nothing
-	elif row.split(" ")[0] == "#":
-		print row
-		continue#comments
-	else:
-		x.append(row.split(" ")[0])
-		y.append(row.split(" ")[1])
-		z.append(row.split(" ")[2])
-		n.append(row.split(" ")[3])
+for planes in data["Planes"]:
+	plane=[]
+	plane.append(list(zip(*planes))[0])
+	plane.append(list(zip(*planes))[1])
+	plane.append(list(zip(*planes))[2])
+	all_planes.append(plane)
 
-x = [float(g) for g in x]
-y = [float(g) for g in y]
-z = [float(g) for g in z]
-n = [float(g) for g in n]
+receiver=data["Receiver"]
+transmitter=data["Transmitter"]
+pdp_time=list(zip(*data["Time"]))[0]
+pdp_time=[i * 1e9 for i in pdp_time]
+pdp_field=list(zip(*data["Time"]))[1]
+pdp_field=[10*log(i,10) for i in pdp_field]
+x=list(zip(*data["Points"]))[0]
+y=list(zip(*data["Points"]))[1]
+z=list(zip(*data["Points"]))[2]
+n=list(zip(*data["Points"]))[3]
 
 fig = figure(1)
 ax = Axes3D( fig )
@@ -124,6 +94,9 @@ ax.plot_surface(xm, ym, zm, color=color3, linewidth=0)
 #savefig('figure_1.png')
 figure(2)
 scatter(pdp_time,pdp_field)
+title(r"Power delay profile")
+xlabel(r"Time taken to reach in nanoseconds",size=13)
+ylabel(r"Power of the rays at the receiver",size=13)
 #savefig('figure_2.png')
 
 show()

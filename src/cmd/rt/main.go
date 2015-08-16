@@ -14,12 +14,12 @@ import (
 )
 
 type RayLog struct {
-	Time       []float64
-	Points     []rt.Point3D
-	DidItReach int
+	TimeAndField []float64
+	Points       []rt.Point3D
+	DidItReach   int
 }
 
-func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64, obstacles []rt.Object, presentIndex int, ch chan RayLog) int {
+func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, receiverLocal rt.Receiver, pathLength float64, obstacles []rt.Object, presentIndex int, ch chan RayLog) int { //removed receiverLocal ::check it
 
 	/*Find the next obstacle in the path of the ray:*/
 	t, next_object_index, next_plane_index := rt.NextObject(-1, ray, obstacles)
@@ -39,8 +39,9 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 	}
 
 	/*Here we create a local instance of the receiver because the goroutine should not be depending on a global variable to increase efficiency of the concurrency.*/
-	var receiverLocal rt.Receiver = rt.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
+	//var receiverLocal rt.Receiver = rt.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
 
+	// var receiverLocal rt.Receiver
 	/*Check if the ray enters the receiver region:*/
 	receiverCheck := rt.DoesItPass(ray, receiverLocal)
 
@@ -87,7 +88,7 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 	/*Did it reach?*/
 	if didItReach == 1 {
 		timeOfReach := pathLength / 3e8
-		localLog.Time = []float64{timeOfReach, fieldStrength}
+		localLog.TimeAndField = []float64{timeOfReach, fieldStrength}
 		localLog.Points = []rt.Point3D{[]float64{ray.Point[0], ray.Point[1], ray.Point[2], float64(*rayid)}, []float64{nextPoint[0], nextPoint[1], nextPoint[2], float64(*rayid)}}
 		localLog.DidItReach = didItReach
 		*rayid = *(rayid) + 1
@@ -95,6 +96,10 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 		//fmt.Print("|")
 		return 2
 	}
+
+	//nextPoint and ray.Point
+	//catch all the receivers lying in the region between these two points
+	//there are 101 x 101 receviers in the room:get index as codeutil.DataArray[0:100][0:100]
 
 	/*Field attenuation with distance:*/
 	fieldStrength *= math.Exp(-1 * pathLength * 0.4)
@@ -113,9 +118,9 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 		/*The purpose of if condition here: Reflection should take place only if the ray is hitting on walls of room OR the OUTER surface of an object*/
 		/*Ray travelling in the room medium(and not inside any object) would imply that presentIndex = 0*/
 		/*OR maybe that the ray is travelling inside an object which is touching one of the walls of the room; and the ray is hitting that wall; => next_object_index = 0*/
-		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, pathLength, obstacles, presentIndex, ch)
+		ref_return = Raytrace(rayid, reflectedRay, obstacles[presentIndex].R_coeff*fieldStrength, receiverLocal, pathLength, obstacles, presentIndex, ch)
 	}
-	trans_return := Raytrace(rayid, transmittedRay, obstacles[next_object_index].T_coeff*fieldStrength, pathLength, obstacles, nextIndex, ch)
+	trans_return := Raytrace(rayid, transmittedRay, obstacles[next_object_index].T_coeff*fieldStrength, receiverLocal, pathLength, obstacles, nextIndex, ch)
 
 	if ref_return*trans_return >= 2 {
 		localLog.DidItReach = didItReach
@@ -126,19 +131,13 @@ func Raytrace(rayid *int, ray rt.Ray, fieldStrength float64, pathLength float64,
 	return ref_return * trans_return
 }
 
-var fid *os.File
-
-var PI float64 = 3.14159265
-
-var receiver rt.Receiver = rt.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
-
-var transmitter rt.Transmitter = rt.Transmitter{Point: []float64{-2.0174, -2.58, 0}}
-
 func main() {
 
 	start := time.Now()
 
+	var PI float64 = 3.14159265 //remove pi
 	var numCores int = 1
+	var fid *os.File
 
 	if len(os.Args) < 2 || (len(os.Args) == 2 && os.Args[1] == "-p") {
 		runtime.GOMAXPROCS(1)
@@ -151,98 +150,118 @@ func main() {
 		fmt.Printf("Writing to json/out_%s_cores.json\n", os.Args[1])
 	}
 
-	/*Create objects including the room itself*/
-	rt.Data.Receiver = []float64{receiver.Point[0], receiver.Point[1], receiver.Point[2], receiver.Radius}
-	rt.Data.Transmitter = transmitter.Point
+	var receiver rt.Receiver // = rt.Receiver{Point: []float64{-5, -3.08, 0}, Radius: 0.2241}
+	var transmitter rt.Transmitter = rt.Transmitter{Point: []float64{-2.0174, -2.58, 0}}
+	//var transmitterArray []rt.Transmitter
 
 	Room := rt.Object{Length: 13, Breadth: 8.6, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 1, Position: []float64{0, 0, 0}}
-	Room.PrintObjectData()
+	Room.SaveObjectData()
 
-	Box := rt.Object{Length: 0.03, Breadth: 2.5, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{-3.6586, -2.163, 0}}
-	Box.PrintObjectData()
+	Wall := rt.Object{Length: 0.03, Breadth: 2.5, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{-3.6586, -2.163, 0}}
+	Wall.SaveObjectData()
 
 	Box1 := rt.Object{Length: 0.91, Breadth: 0.645, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{6.045, 3.9775, 0}}
-	Box1.PrintObjectData()
+	Box1.SaveObjectData()
 
 	Box2 := rt.Object{Length: 0.91, Breadth: 0.645, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{-6.045, 3.9775, 0}}
-	Box2.PrintObjectData()
+	Box2.SaveObjectData()
 
 	Box3 := rt.Object{Length: 0.91, Breadth: 0.645, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{6.045, -3.9775, 0}}
-	Box3.PrintObjectData()
+	Box3.SaveObjectData()
 
 	Box4 := rt.Object{Length: 0.91, Breadth: 0.645, Height: 3, R_coeff: 0.4, T_coeff: 0, R_index: 2, Position: []float64{-6.045, -3.9775, 0}}
-	Box4.PrintObjectData()
+	Box4.SaveObjectData()
 
-	var obstacles []rt.Object = []rt.Object{Room, Box, Box1, Box2, Box3, Box4}
+	var obstacles []rt.Object = []rt.Object{Room, Wall, Box1, Box2, Box3, Box4}
 
-	/*Initiate the rays from transmitter*/
 	fR := 0.6
-	fA := 0.005
-	fB := 0.005
+	fA := 0.05
+	fB := 0.05
 	count_rays := 0
 	rayid := 0
-	max_count := 0
+	totalNumberOfRaysProcessed := 0
 	for fi := -fB * float64(int(fR/fB)); fi <= fR; fi = fi + fB {
 		fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
 		for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
-			max_count++
+			totalNumberOfRaysProcessed++
 		}
 	}
 
-	ch := make(chan RayLog)
+	for XReceiverIndex := 0; XReceiverIndex <= 10; XReceiverIndex++ {
 
-	go func() {
-		for {
-			x, ok := <-ch
-			if !ok {
-				close(ch)
-				break
-			}
-			{
-				t := make([][]float64, len(rt.Data.Points)+2)
-				copy(t, rt.Data.Points)
-				rt.Data.Points = t
-				rt.Data.Points[len(t)-2] = x.Points[0]
-				rt.Data.Points[len(t)-1] = x.Points[1]
-			}
-			if x.DidItReach == 1 {
-				t := make([][]float64, len(rt.Data.Time)+1)
-				copy(t, rt.Data.Time)
-				rt.Data.Time = t
-				rt.Data.Time[len(t)-1] = x.Time
-			}
-		}
-	}()
+		var receiverPosX float64 = -6.5 + 13*float64(XReceiverIndex)/10.0
 
-	var wg sync.WaitGroup
+		for YReceiverIndex := 0; YReceiverIndex <= 10; YReceiverIndex++ {
 
-	for i := 0; i < numCores; i++ {
-		wg.Add(1)
-		go func(i int) {
-			for fi := -fB*float64(int(fR/fB)) + float64(i)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi <= -fB*float64(int(fR/fB))+float64(i+1)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi = fi + fB {
-				fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
-				for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
-					rayX := rt.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
-					Raytrace(&rayid, rayX, 1, 0, obstacles, 0, ch)
-					fmt.Print("\r", "Loading ", count_rays, "/", max_count)
-					count_rays++
+			var receiverPosY float64 = -4.3 + 8.6*float64(YReceiverIndex)/10.0
+
+			receiver = rt.Receiver{Point: []float64{receiverPosX, receiverPosY, 0}, Radius: 0.2241}
+
+			/*Create objects including the room itself*/
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Receiver = []float64{receiver.Point[0], receiver.Point[1], receiver.Point[2], receiver.Radius}
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Transmitter = transmitter.Point
+
+			/*Initiate the rays from transmitter*/
+
+			ch := make(chan RayLog)
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TotalField = 0
+
+			var wg sync.WaitGroup
+
+			go func() {
+				for {
+					x, ok := <-ch
+					if !ok {
+						close(ch)
+						break
+					}
+					{
+						t := make([][]float64, len(rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Points)+2)
+						copy(t, rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Points)
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Points = t
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Points[len(t)-2] = x.Points[0]
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Points[len(t)-1] = x.Points[1]
+					}
+					if x.DidItReach == 1 {
+						t := make([][]float64, len(rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TimeAndField)+1)
+						copy(t, rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TimeAndField)
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TimeAndField = t
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TimeAndField[len(t)-1] = x.TimeAndField
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TotalField = rt.DataArray.Data[XReceiverIndex][YReceiverIndex].TotalField + x.TimeAndField[1]
+						rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Index = []int{XReceiverIndex, YReceiverIndex}
+					}
 				}
+			}()
+
+			for i := 0; i < numCores; i++ {
+				wg.Add(1)
+				go func(i int, rayid int) {
+					for fi := -fB*float64(int(fR/fB)) + float64(i)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi <= -fB*float64(int(fR/fB))+float64(i+1)*(fR+fB*float64(int(fR/fB)))/float64(numCores); fi = fi + fB {
+						fr := math.Sqrt(math.Pow(fR, 2) - math.Pow(fi, 2))
+						for fa := 0.0; fa <= 2*PI; fa = fa + fA/fr {
+							rayX := rt.Ray{Point: transmitter.Point, Direction: []float64{fr * math.Cos(fa), fr * math.Sin(fa), fi}}
+							Raytrace(&rayid, rayX, 1, receiver, 0, obstacles, 0, ch)
+							//fmt.Print("\r", "Loading ", count_rays, "/", totalNumberOfRaysProcessed)
+							count_rays++
+						}
+					}
+					wg.Done()
+				}(i, rayid)
 			}
-			wg.Done()
-		}(i)
+
+			wg.Wait()
+
+			elapsed := time.Since(start)
+			fmt.Println("\rDone processing all the rays!!!!\t\t\t")
+			fmt.Println("Processed ", count_rays, " rays in ", elapsed)
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Process.NumCores = 2
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Process.NumCores = numCores
+			rt.DataArray.Data[XReceiverIndex][YReceiverIndex].Process.NumRays = totalNumberOfRaysProcessed
+		}
 	}
-
-	wg.Wait()
-
-	elapsed := time.Since(start)
-	fmt.Println("\rDone processing all the rays!!!!\t\t\t")
-	fmt.Println("Processed ", count_rays, " rays in ", elapsed)
-	rt.Data.Process.NumCores = 2
-	rt.Data.Process.NumCores = numCores
-	rt.Data.Process.NumRays = max_count
 
 	/*Print the sotred data into the out.json file*/
-	pinbytes, _ := json.MarshalIndent(rt.Data, "", "\t")
+	pinbytes, _ := json.MarshalIndent(rt.DataArray, "", "\t")
 	jd := json.NewEncoder(fid)
 	json.MarshalIndent(jd, "", "\t")
 	fmt.Fprintln(fid, string(pinbytes))
